@@ -67,6 +67,14 @@ set config {
 			<trace quota="10M" buf-size="1M"/>
 			<profile ds-size="4M"/>
 		</config>
+	</start>
+	<start name="parser">
+		<resource name="RAM" quantum="40M"/>
+		<provides> <service name="parser"/> </provides>
+		<config>
+			<trace quota="10M" buf-size="1M"/>
+			<profile ds-size="4M"/>
+		</config>
 	</start>}
 
 append_if [have_spec gpio] config {
@@ -109,7 +117,7 @@ append qemu_args "-net vde,sock=/tmp/switch1 "
 append qemu_args "-net nic,model=lan9118,macaddr=02:00:00:00:01:01 "
 
 set boot_modules {
-	core init dom0 task-manager
+	core init dom0 task-manager parser
 	timer
 	ld.lib.so
 	libc.lib.so

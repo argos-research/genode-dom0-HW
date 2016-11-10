@@ -15,7 +15,8 @@ Dom0_server::Dom0_server() :
 	_listen_socket(0),
 	_in_addr{0},
 	_target_addr{0},
-	_task_manager{}
+	_task_manager{},
+	_parser{}
 {
 	lwip_tcpip_init();
 
@@ -139,9 +140,9 @@ void Dom0_server::serve()
 			}
 			PDBG("Done.");
 		}
-		else if (message == GET_LIVE)
+		/*else if (message == GET_LIVE)
 		{
-			Genode::Dataspace_capability xmlDsCap = _task_manager.live_data();
+			Genode::Dataspace_capability xmlDsCap = _parser.live_data();
 			Genode::Rm_session* rm = Genode::env()->rm_session();
 			char* xml = (char*)rm->attach(xmlDsCap);
 
@@ -152,7 +153,7 @@ void Dom0_server::serve()
 
 			rm->detach(xml);
 			PDBG("Done.");
-		}
+		}*/
 		else if (message == START)
 		{
 			PDBG("Starting tasks.");
@@ -165,9 +166,9 @@ void Dom0_server::serve()
 			_task_manager.stop();
 			PDBG("Done.");
 		}
-		else if (message == GET_PROFILE)
+		/*else if (message == GET_PROFILE)
 		{
-			Genode::Dataspace_capability xmlDsCap = _task_manager.profile_data();
+			Genode::Dataspace_capability xmlDsCap = _parser.profile_data();
 			Genode::Rm_session* rm = Genode::env()->rm_session();
 			char* xml = (char*)rm->attach(xmlDsCap);
 
@@ -178,7 +179,7 @@ void Dom0_server::serve()
 
 			rm->detach(xml);
 			PDBG("Done.");
-		}
+		}*/
 		else
 		{
 			PWRN("Unknown message: %d", message);

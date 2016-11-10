@@ -2,6 +2,7 @@
 
 #include "tcp_socket.h"
 #include <dom0/task_manager_connection.h>
+#include <dom0/parser_connection.h>
 
 class Dom0_server : public Tcp_socket
 {
@@ -21,4 +22,5 @@ private:
 	struct sockaddr_in _in_addr;
 	sockaddr _target_addr;
 	Task_manager_connection _task_manager;
+	Parser_connection _parser;
 };
