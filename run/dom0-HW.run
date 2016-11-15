@@ -53,7 +53,7 @@ set config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="dom0">
+	<start name="dom0-HW">
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="dom0"/></provides>
 		<config>
