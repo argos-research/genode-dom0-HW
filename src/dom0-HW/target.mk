@@ -1,4 +1,4 @@
-TARGET = dom0
+TARGET = dom0-HW
 SRC_CC = main.cc tcp_socket.cc dom0_server.cc config.cc
 LIBS = base config lwip libc stdcxx
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "tcp_socket.h"
-#include <dom0/task_manager_connection.h>
-#include <dom0/parser_connection.h>
+#include <taskloader/taskloader_connection.h>
+#include <parser/parser_connection.h>
 
 class Dom0_server : public Tcp_socket
 {
@@ -21,6 +21,6 @@ private:
 	int _listen_socket;
 	struct sockaddr_in _in_addr;
 	sockaddr _target_addr;
-	Task_manager_connection _task_manager;
+	Taskloader_connection _task_manager;
 	Parser_connection _parser;
 };
