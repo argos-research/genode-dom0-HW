@@ -3,6 +3,7 @@
 #include "tcp_socket.h"
 #include <taskloader/taskloader_connection.h>
 #include <parser/parser_connection.h>
+#include <monitoring/monitoring_connection.h>
 
 class Dom0_server : public Tcp_socket
 {
@@ -21,6 +22,7 @@ private:
 	int _listen_socket;
 	struct sockaddr_in _in_addr;
 	sockaddr _target_addr;
-	Taskloader_connection _task_manager;
+	Taskloader_connection _task_loader;
 	Parser_connection _parser;
+	Monitoring_connection _monitoring;
 };

@@ -15,8 +15,9 @@ Dom0_server::Dom0_server() :
 	_listen_socket(0),
 	_in_addr{0},
 	_target_addr{0},
-	_task_manager{},
-	_parser{}
+	_task_loader{},
+	_parser{},
+	_monitoring{}
 {
 	lwip_tcpip_init();
 
@@ -97,13 +98,13 @@ void Dom0_server::serve()
 			// Get XML file.
 			NETCHECK_LOOP(receive_data(xml_ds.local_addr<char>(), xml_size));
 			PDBG("Received XML. Initializing tasks.");
-			_task_manager.add_tasks(xml_ds.cap());
+			_task_loader.add_tasks(xml_ds.cap());
 			PDBG("Done.");
 		}
 		else if (message == CLEAR)
 		{
 			PDBG("Clearing tasks.");
-			_task_manager.clear_tasks();
+			_task_loader.clear_tasks();
 			PDBG("Done.");
 		}
 		else if (message == SEND_BINARIES)
@@ -130,7 +131,7 @@ void Dom0_server::serve()
 				NETCHECK_LOOP(receiveInt32_t(binary_size));
 
 				// Get binary data.
-				Genode::Dataspace_capability binDsCap = _task_manager.binary_ds(name_ds.cap(), binary_size);
+				Genode::Dataspace_capability binDsCap = _task_loader.binary_ds(name_ds.cap(), binary_size);
 				Genode::Rm_session* rm = Genode::env()->rm_session();
 				char* bin = (char*)rm->attach(binDsCap);
 				NETCHECK_LOOP(receive_data(bin, binary_size));
@@ -157,13 +158,13 @@ void Dom0_server::serve()
 		else if (message == START)
 		{
 			PDBG("Starting tasks.");
-			_task_manager.start();
+			_task_loader.start();
 			PDBG("Done.");
 		}
 		else if (message == STOP)
 		{
 			PDBG("Stopping tasks.");
-			_task_manager.stop();
+			_task_loader.stop();
 			PDBG("Done.");
 		}
 		/*else if (message == GET_PROFILE)
