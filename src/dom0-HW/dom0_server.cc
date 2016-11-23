@@ -141,7 +141,7 @@ void Dom0_server::serve()
 			}
 			PDBG("Done.");
 		}
-		/*else if (message == GET_LIVE)
+		else if (message == GET_LIVE)
 		{
 			Genode::Dataspace_capability xmlDsCap = _parser.live_data();
 			Genode::Rm_session* rm = Genode::env()->rm_session();
@@ -154,7 +154,7 @@ void Dom0_server::serve()
 
 			rm->detach(xml);
 			PDBG("Done.");
-		}*/
+		}
 		else if (message == START)
 		{
 			PDBG("Starting tasks.");

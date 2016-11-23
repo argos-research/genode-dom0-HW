@@ -57,7 +57,7 @@ set config {
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="dom0"/></provides>
 		<config>
-			<server dhcp="no" listen-address="192.168.217.5" port="3001"/>
+			<server dhcp="no" listen-address="192.168.217.21" port="3001"/>
 		</config>
 	</start>
 	<start name="taskloader">
