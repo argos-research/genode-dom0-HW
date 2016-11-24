@@ -101,19 +101,6 @@ append_if $use_usb_driver config {
 			<nic mac="02:00:00:00:01:01"/>
 		</config>
 	</start>}
-append_if $use_usb_driver config {
-	<start name="usb_drv_2">
-		<binary name="usb_drv"/>
-		<resource name="RAM" quantum="12M"/>
-		<provides>
-			<service name="Usb"/>
-		</provides>
-		<config uhci="yes" ehci="yes" xhci="yes">
-			<raw/>
-		</config>
-	</start>}
-
-
 
 append_platform_drv_config
 
