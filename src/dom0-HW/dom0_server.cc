@@ -148,12 +148,12 @@ void Dom0_server::serve()
 			char* xml = (char*)rm->attach(xmlDsCap);
 
 			size_t size = std::strlen(xml) + 1;
-			PINF("Sending profile data of size %d", size);
+			//PINF("Sending profile data of size %d", size);
 			NETCHECK_LOOP(sendInt32_t(size));
 			NETCHECK_LOOP(send_data(xml, size));
 
 			rm->detach(xml);
-			PDBG("Done.");
+			//PDBG("Done.");
 		}
 		else if (message == START)
 		{
