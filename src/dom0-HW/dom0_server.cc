@@ -16,8 +16,7 @@ Dom0_server::Dom0_server() :
 	_in_addr{0},
 	_target_addr{0},
 	_task_loader{},
-	_parser{},
-	_monitoring{}
+	_parser{}
 {
 	lwip_tcpip_init();
 

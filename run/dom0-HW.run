@@ -11,7 +11,7 @@ if {[expr !$use_usb_driver && !$use_nic_driver]} {
 requires_installation_of lynx
 
 set build_components {
-	core init dom0-HW parser taskloader monitoring
+	core init dom0-HW parser taskloader
 	drivers/timer
 	drivers/nic
 }
@@ -68,13 +68,6 @@ set config {
 			<profile ds-size="4M"/>
 		</config>
 	</start>
-	<start name="monitoring">
-		<resource name="RAM" quantum="40M"/>
-		<provides><service name="monitoring"/></provides>
-		<config>
-			<trace quota="10M" buf-size="1M"/>
-		</config>
-	</start>
 	<start name="parser">
 		<resource name="RAM" quantum="40M"/>
 		<provides> <service name="parser"/> </provides>
@@ -124,7 +117,7 @@ append qemu_args "-net vde,sock=/tmp/switch1 "
 append qemu_args "-net nic,model=lan9118,macaddr=02:00:00:00:01:01 "
 
 set boot_modules {
-	core init dom0-HW taskloader parser monitoring
+	core init dom0-HW taskloader parser
 	timer
 	ld.lib.so
 	libc.lib.so
