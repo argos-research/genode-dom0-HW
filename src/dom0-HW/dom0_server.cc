@@ -142,6 +142,10 @@ void Dom0_server::serve()
 		}
 		else if (message == GET_LIVE)
 		{
+			//stats_proto stats = {};
+			//char *name="dom0";
+			stats_display();
+			//stats_display_proto(&stats, name);
 			Genode::Dataspace_capability xmlDsCap = _parser.live_data();
 			Genode::Rm_session* rm = Genode::env()->rm_session();
 			char* xml = (char*)rm->attach(xmlDsCap);

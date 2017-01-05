@@ -65,7 +65,7 @@ set config {
 		<provides><service name="taskloader"/></provides>
 		<config>
 			<trace quota="10M" buf-size="1M"/>
-			<profile ds-size="4M"/>
+			<profile ds-size="10M"/>
 		</config>
 	</start>
 	<start name="parser">
@@ -73,7 +73,7 @@ set config {
 		<provides> <service name="parser"/> </provides>
 		<config>
 			<trace quota="10M" buf-size="1M"/>
-			<profile ds-size="4M"/>
+			<profile ds-size="10M"/>
 		</config>
 	</start>}
 
