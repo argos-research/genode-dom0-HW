@@ -11,7 +11,7 @@ if {[expr !$use_usb_driver && !$use_nic_driver]} {
 requires_installation_of lynx
 
 set build_components {
-	core init dom0-HW parser taskloader
+	core init dom0-HW parser taskloader mon_manager
 	drivers/timer
 	drivers/nic
 }
@@ -31,7 +31,7 @@ create_boot_directory
 #
 
 set config {
-<config verbose="yes" prio_levels="8">
+<config verbose="yes" prio_levels="128">
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="RAM"/>
@@ -53,6 +53,10 @@ set config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
+	<start name="mon_manager">
+        	<resource name="RAM" quantum="40M"/>
+        	<provides><service name="mon_manager"/></provides>
+        </start>
 	<start name="dom0-HW">
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="dom0"/></provides>
@@ -72,8 +76,8 @@ set config {
 		<resource name="RAM" quantum="40M"/>
 		<provides> <service name="parser"/> </provides>
 		<config>
-			<trace quota="10M" buf-size="1M"/>
-			<profile ds-size="10M"/>
+			<trace quota="20M" buf-size="10M"/>
+			<profile ds-size="20M"/>
 		</config>
 	</start>}
 
@@ -117,7 +121,7 @@ append qemu_args "-net vde,sock=/tmp/switch1 "
 append qemu_args "-net nic,model=lan9118,macaddr=02:00:00:00:01:01 "
 
 set boot_modules {
-	core init dom0-HW taskloader parser
+	core init dom0-HW taskloader parser mon_manager
 	timer
 	ld.lib.so
 	libc.lib.so
