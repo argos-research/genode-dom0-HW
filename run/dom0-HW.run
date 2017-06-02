@@ -6,8 +6,7 @@ set use_usb_driver [expr [have_spec omap4] || [have_spec arndale] || [have_spec 
 set use_nic_driver [expr !$use_usb_driver && ![have_spec imx53] && ![have_spec hw_odroid_xu] && ![have_spec linux] && ![have_spec hw_wand_quad]]
 
 set skip_run 0
-if {[info exists ::env(ON_JENKINS]} {
-  set skip_run 1}
+if {[info exists ::env(ON_JENKINS)]} {set skip_run 1}
 
 if {[expr !$use_usb_driver && !$use_nic_driver]} {
 	puts "\n Run script is not supported on this platform. \n"; exit 0 }
