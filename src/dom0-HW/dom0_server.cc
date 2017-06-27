@@ -131,7 +131,7 @@ void Dom0_server::serve()
 
 				// Get binary data.
 				Genode::Dataspace_capability binDsCap = _task_loader.binary_ds(name_ds.cap(), binary_size);
-				Genode::Rm_session* rm = Genode::env()->rm_session();
+				Genode::Region_map* rm = Genode::env()->rm_session();
 				char* bin = (char*)rm->attach(binDsCap);
 				NETCHECK_LOOP(receive_data(bin, binary_size));
 
@@ -144,10 +144,10 @@ void Dom0_server::serve()
 		{
 			//stats_proto stats = {};
 			//char *name="dom0";
-			stats_display();
+			//stats_display();
 			//stats_display_proto(&stats, name);
 			Genode::Dataspace_capability xmlDsCap = _parser.live_data();
-			Genode::Rm_session* rm = Genode::env()->rm_session();
+			Genode::Region_map* rm = Genode::env()->rm_session();
 			char* xml = (char*)rm->attach(xmlDsCap);
 
 			size_t size = std::strlen(xml) + 1;

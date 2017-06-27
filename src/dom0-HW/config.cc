@@ -1,3 +1,4 @@
+#include <base/printf.h>
 #include "config.h"
 
 #include <os/config.h>

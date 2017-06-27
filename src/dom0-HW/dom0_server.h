@@ -4,9 +4,9 @@
 #include <taskloader/taskloader_connection.h>
 #include <parser/parser_connection.h>
 
-extern "C" {
+/*extern "C" {
 #include <lwip/stats.h>
-}
+}*/
 
 class Dom0_server : public Tcp_socket
 {
