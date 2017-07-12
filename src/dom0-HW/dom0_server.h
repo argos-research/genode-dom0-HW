@@ -3,6 +3,7 @@
 #include "tcp_socket.h"
 #include <taskloader/taskloader_connection.h>
 #include <parser/parser_connection.h>
+#include <sched_controller_session/connection.h>
 
 extern "C" {
 #include <lwip/stats.h>
@@ -32,4 +33,5 @@ private:
 	sockaddr _target_addr;
 	Taskloader_connection _task_loader;
 	Parser_connection _parser;
+	Sched_controller::Connection _controller;
 };

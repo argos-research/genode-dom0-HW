@@ -23,3 +23,7 @@
 
 // Request live info as xml
 #define GET_LIVE 0x159D2
+
+// Optimize scheduling
+#define OPTIMIZE 0x6F7074
+

@@ -111,6 +111,7 @@ int Dom0_server::connect()
 
 void Dom0_server::serve()
 {
+	PDBG("BN ------------------------ serve function in dom0_server is called");
 	int message = 0;
 	while (true)
 	{
@@ -173,6 +174,7 @@ void Dom0_server::serve()
 		}
 		else if (message == GET_LIVE)
 		{
+			PDBG("BN --------------------------------- Get live has arrived -------------------");
 			//stats_proto stats = {};
 			//char *name="dom0";
 			//stats_display();
@@ -215,6 +217,28 @@ void Dom0_server::serve()
 			rm->detach(xml);
 			PDBG("Done.");
 		}*/
+
+		else if (message == OPTIMIZE)
+		{
+			PDBG("BN --------------------------- Optimize task scheduling.");
+
+
+			//Same code as SEND_DESCS
+			// Get XML size.
+			int xml_size;
+			NETCHECK_LOOP(receiveInt32_t(xml_size));
+			Genode::Attached_ram_dataspace xml_ds(Genode::env()->ram_session(), xml_size);
+			PINF("Ready to receive XML of size %d.", xml_size);
+
+			// Get XML file.
+			NETCHECK_LOOP(receive_data(xml_ds.local_addr<char>(), xml_size));
+			PDBG("Received XML. Call optimizer.");
+			
+			
+			_controller.optimize(xml_ds.cap());
+			PDBG("Done optimizing.");
+		}
+
 		else
 		{
 			PWRN("Unknown message: %d", message);

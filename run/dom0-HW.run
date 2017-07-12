@@ -14,7 +14,7 @@ if {[expr !$use_usb_driver && !$use_nic_driver]} {
 requires_installation_of lynx
 
 set build_components {
-	core init dom0-HW parser taskloader mon_manager utilization sched_controller sync
+	core init dom0-HW parser taskloader sched_controller mon_manager utilization
 	drivers/timer
 	drivers/nic
 }
@@ -87,14 +87,15 @@ set config {
 			<profile ds-size="20M"/>
 		</config>
 	</start>
-	<start name="sched_controller">
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="Sched_controller"/> </provides>
+	<start name="sched_controller" priority="0">
+		<resource name="RAM" quantum="40M"/>
+		<provides><service name="Sched_controller"/></provides>
+		<config>
+			<trace quota="10M" buf-size="1M"/>
+			<profile ds-size="10M"/>
+		</config>
 	</start>
-	<start name="sync">
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="sync"/> </provides>
-	</start>}
+}
 
 append_if [have_spec gpio] config {
 	<start name="gpio_drv">
@@ -136,7 +137,7 @@ append qemu_args "-net vde,sock=/tmp/switch1 "
 append qemu_args "-net nic,model=lan9118,macaddr=02:00:00:00:01:01 "
 
 set boot_modules {
-	core init dom0-HW taskloader parser mon_manager utilization sched_controller sync
+	core init dom0-HW taskloader parser sched_controller mon_manager utilization
 	timer
 	ld.lib.so
 	libc.lib.so
