@@ -9,8 +9,6 @@ int main(int argc, char* argv[])
 
 	while (true)
 	{
-
-		PDBG("BN ------------------ dom0-main -----------\n");
 		// Sworn to connect and serve.
 		server.connect();
 		server.serve();
