@@ -8,6 +8,11 @@
 #include <lwip/stats.h>
 }*/
 
+#include <util/xml_node.h>
+
+// Get XML node attribute if it exists and copy default if not.
+bool attribute_value(const Genode::Xml_node& config_node, const char* type, char* dst, const char* default_val, size_t max_len);
+
 class Dom0_server : public Tcp_socket
 {
 public:
