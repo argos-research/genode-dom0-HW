@@ -7,9 +7,11 @@
 #include <base/printf.h>
 #include <lwip/genode.h>
 #include <os/attached_ram_dataspace.h>
+#include <nic/packet_allocator.h>
 
-#include "config.h"
 #include "communication_magic_numbers.h"
+#include <timer_session/connection.h>
+#include <os/config.h>
 
 Dom0_server::Dom0_server() :
 	_listen_socket(0),
@@ -20,25 +22,54 @@ Dom0_server::Dom0_server() :
 {
 	lwip_tcpip_init();
 
-	const Config& config = Config::get();
+	enum { BUF_SIZE = Nic::Packet_allocator::DEFAULT_PACKET_SIZE * 128 };
+
+	Genode::Xml_node network = Genode::config()->xml_node().sub_node("network");
 
 	_in_addr.sin_family = AF_INET;
-	_in_addr.sin_port = htons(config.port);
-	if (std::strcmp(config.dhcp, "yes") == 0)
+	
+	if (network.attribute_value<bool>("dhcp", true))
 	{
-		if (lwip_nic_init(0, 0, 0, config.buf_size, config.buf_size)) {
-			PERR("We got no IP address!");
+		
+		PDBG("DHCP network...");
+		if (lwip_nic_init(0,
+		                  0,
+		                  0,
+		                  BUF_SIZE,
+		                  BUF_SIZE)) {
+			PERR("lwip init failed!");
 			return;
 		}
+		/* dhcp assignement takes some time... */
+		PDBG("Waiting 10s for ip assignement");
+		Timer::Connection timer;
+		timer.msleep(10000);
 		_in_addr.sin_addr.s_addr = INADDR_ANY;
 	}
 	else
 	{
-		if (lwip_nic_init(inet_addr(config.listen_address), inet_addr(config.network_mask), inet_addr(config.network_gateway), config.buf_size, config.buf_size)) {
-			PERR("We got no IP address!");
+		PDBG("manual network...");
+		char ip_addr[16] = {0};
+		char subnet[16] = {0};
+		char gateway[16] = {0};
+		char port[5] = {0};
+
+		network.attribute("ip-address").value(ip_addr, sizeof(ip_addr));
+		network.attribute("subnet-mask").value(subnet, sizeof(subnet));
+		network.attribute("default-gateway").value(gateway, sizeof(gateway));
+		network.attribute("port").value(port, sizeof(port));
+
+		_in_addr.sin_port = htons(atoi(port));
+
+		if (lwip_nic_init(inet_addr(ip_addr),
+		                  inet_addr(subnet),
+		                  inet_addr(gateway),
+		                  BUF_SIZE,
+		                  BUF_SIZE)) {
+			PERR("lwip init failed!");
 			return;
 		}
-		_in_addr.sin_addr.s_addr = inet_addr(config.listen_address);
+		_in_addr.sin_addr.s_addr = inet_addr(ip_addr);
 	}
 
 	if ((_listen_socket = lwip_socket(AF_INET, SOCK_STREAM, 0)) < 0)
