@@ -195,6 +195,12 @@ void Dom0_server::serve()
 		}
 		else if (message == START)
 		{
+			// start optimization
+			PDBG("Sarting the optimization.");
+			_controller.optimize();
+			PDBG("Done with starting the optimization.");
+			
+			// start the tasks
 			PDBG("Starting tasks.");
 			_task_loader.start();
 			PDBG("Done with starting tasks.");
@@ -235,10 +241,6 @@ void Dom0_server::serve()
 			PDBG("Received XML. Setting optimization goal.");
 			_controller.set_opt_goal(xml_ds.cap());
 			PDBG("Done with receiving optimization goal.");
-			
-			// start optimization
-			_controller.optimize();
-			PDBG("Done with starting the optimization.");
 			
 		}
 
