@@ -244,10 +244,6 @@ void Dom0_server::serve()
 			_controller.set_opt_goal(xml_ds.cap());
 			PDBG("Done with receiving optimization goal.");
 			
-			// start optimization
-			_controller.optimize();
-			PDBG("Done with starting the optimization.");
-			
 		}
 
 		else
