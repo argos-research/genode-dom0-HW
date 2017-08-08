@@ -111,7 +111,6 @@ int Dom0_server::connect()
 
 void Dom0_server::serve()
 {
-	PDBG("BN ------------------------ serve function in dom0_server is called");
 	int message = 0;
 	while (true)
 	{
@@ -131,10 +130,10 @@ void Dom0_server::serve()
 			PDBG("Received XML. Initializing tasks.");
 			_task_loader.add_tasks(xml_ds.cap());
 
-			PDBG("Done.");
+			PDBG("Done with reveiving task description.");
 
 			// Parse XML file to receive the optimization goal.
-			_controller.set_opt_goal(xml_ds.cap());
+			//_controller.set_opt_goal(xml_ds.cap());
 
 		}
 		else if (message == CLEAR)
@@ -231,10 +230,24 @@ void Dom0_server::serve()
 		else if (message == OPTIMIZE)
 		{
 
-			PDBG("BN --------------------------- Initiate to optimize the task scheduling.");
+			PDBG("Ready to receive optimization goal.");
+
+			// Get XML size.
+			int xml_size;
+			NETCHECK_LOOP(receiveInt32_t(xml_size));
+			Genode::Attached_ram_dataspace xml_ds(Genode::env()->ram_session(), xml_size);
+			PINF("Ready to receive XML of size %d.", xml_size);
+
+			// Get XML file.
+			NETCHECK_LOOP(receive_data(xml_ds.local_addr<char>(), xml_size));
+			PDBG("Received XML. Setting optimization goal.");
+			_controller.set_opt_goal(xml_ds.cap());
+			PDBG("Done with receiving optimization goal.");
 			
+			// start optimization
 			_controller.optimize();
-			PDBG("Done optimizing.");
+			PDBG("Done with starting the optimization.");
+			
 		}
 
 		else
