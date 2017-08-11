@@ -14,7 +14,7 @@ if {[expr !$use_usb_driver && !$use_nic_driver]} {
 requires_installation_of lynx
 
 set build_components {
-	core init dom0-HW parser taskloader mon_manager utilization
+	core init dom0-HW parser taskloader mon_manager utilization sched_controller
 	drivers/timer
 	drivers/nic
 }
@@ -57,35 +57,39 @@ set config {
 		<provides> <service name="Timer"/> </provides>
 	</start>
 	<start name="mon_manager">
-        	<resource name="RAM" quantum="40M"/>
-        	<provides><service name="mon_manager"/></provides>
+		<resource name="RAM" quantum="40M"/>
+		<provides><service name="mon_manager"/></provides>
         </start>
 	<start name="utilization">
-        	<resource name="RAM" quantum="10M"/>
-        	<provides><service name="utilization"/></provides>
-        </start>
-	<start name="dom0-HW">
 		<resource name="RAM" quantum="10M"/>
+		<provides><service name="utilization"/></provides>
+        </start>
+	<start name="dom0-HW" priority="-5">
+		<resource name="RAM" quantum="20M"/>
 		<provides><service name="dom0"/></provides>
 		<config>
 			<network dhcp="no" ip-address="192.168.217.21" subnet-mask="255.255.255.0" default-gateway="192.168.217.1" port="3001"/>
 		</config>
 	</start>
-	<start name="taskloader">
-		<resource name="RAM" quantum="40M"/>
+	<start name="taskloader" priority="-5">
+		<resource name="RAM" quantum="12M"/>
 		<provides><service name="taskloader"/></provides>
 		<config>
 			<trace quota="10M" buf-size="1M"/>
 			<profile ds-size="10M"/>
 		</config>
 	</start>
-	<start name="parser">
-		<resource name="RAM" quantum="40M"/>
+	<start name="parser" priority="-1">
+		<resource name="RAM" quantum="30M"/>
 		<provides> <service name="parser"/> </provides>
 		<config>
 			<trace quota="20M" buf-size="10M"/>
 			<profile ds-size="20M"/>
 		</config>
+	</start>
+	<start name="sched_controller" priority="-126">
+		<resource name="RAM" quantum="40M"/>
+		<provides><service name="Sched_controller"/></provides>
 	</start>}
 
 append_if [have_spec gpio] config {
@@ -128,7 +132,7 @@ append qemu_args "-net vde,sock=/tmp/switch1 "
 append qemu_args "-net nic,model=lan9118,macaddr=02:00:00:00:01:01 "
 
 set boot_modules {
-	core init dom0-HW taskloader parser mon_manager utilization
+	core init dom0-HW taskloader parser mon_manager utilization sched_controller
 	timer
 	ld.lib.so
 	libc.lib.so
@@ -146,6 +150,6 @@ append_platform_drv_boot_modules
 
 build_boot_image $boot_modules
 
-append qemu_args " -nographic "
+append qemu_args "-smp 4 -nographic "
 
 if {$skip_run == 0} {run_genode_until forever}
