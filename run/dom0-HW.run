@@ -56,11 +56,11 @@ set config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="mon_manager">
+	<start name="mon_manager" priority="0">
         	<resource name="RAM" quantum="40M"/>
         	<provides><service name="mon_manager"/></provides>
         </start>
-	<start name="utilization">
+	<start name="utilization" priority="0">
         	<resource name="RAM" quantum="10M"/>
         	<provides><service name="utilization"/></provides>
         </start>
@@ -71,7 +71,7 @@ set config {
 			<network dhcp="no" ip-address="192.168.217.21" subnet-mask="255.255.255.0" default-gateway="192.168.217.20" port="3001"/>
 		</config>
 	</start>
-	<start name="taskloader">
+	<start name="taskloader" priority="0">
 		<resource name="RAM" quantum="40M"/>
 		<provides><service name="taskloader"/></provides>
 		<config>
@@ -79,7 +79,7 @@ set config {
 			<profile ds-size="10M"/>
 		</config>
 	</start>
-	<start name="parser">
+	<start name="parser" priority="0">
 		<resource name="RAM" quantum="40M"/>
 		<provides> <service name="parser"/> </provides>
 		<config>
@@ -87,7 +87,7 @@ set config {
 			<profile ds-size="20M"/>
 		</config>
 	</start>
-	<start name="sched_controller">
+	<start name="sched_controller" priority="0">
 		<resource name="RAM" quantum="40M"/>
 		<provides><service name="Sched_controller"/></provides>
 		<config>
@@ -95,7 +95,7 @@ set config {
 			<profile ds-size="10M"/>
 		</config>
 	</start>
-	<start name="sync">
+	<start name="sync" priority="0">
 		<resource name="RAM" quantum="100M"/>
 		<provides><service name="sync"/></provides>
 	</start>
