@@ -20,6 +20,7 @@ Dom0_server::Dom0_server() :
 	_task_loader{},
 	_parser{}
 {
+	PINF("------------------------- Start serving \n");
 	lwip_tcpip_init();
 
 	enum { BUF_SIZE = Nic::Packet_allocator::DEFAULT_PACKET_SIZE * 128 };
@@ -87,7 +88,7 @@ Dom0_server::Dom0_server() :
 		PERR("Listen failed!");
 		return;
 	}
-	PINF("Listening...\n");
+	PINF("-------------------------Listening...\n");
 }
 
 Dom0_server::~Dom0_server()
