@@ -154,6 +154,6 @@ append_platform_drv_boot_modules
 
 build_boot_image $boot_modules
 
-append qemu_args " -nographic "
+append qemu_args " -nographic -smp 2"
 
 if {$skip_run == 0} {run_genode_until forever}
