@@ -122,8 +122,9 @@ install_config $config
 # Boot image
 #
 
-append qemu_args "-net vde,sock=/tmp/switch1 "
-append qemu_args "-net nic,model=lan9118,macaddr=02:00:00:00:01:01 "
+append qemu_args "-net vde,sock=/tmp/switch1 -net nic,macaddr=02:00:00:00:01:01 "
+append_if [expr [have_spec zybo]] qemu_args "-net nic,model=cadence_gem -serial null -serial mon:stdio "
+append_if [expr ![have_spec zybo]] qemu_args "-net nic,model=lan9118 "
 
 set boot_modules {
 	core init dom0-HW taskloader parser mon_manager utilization
