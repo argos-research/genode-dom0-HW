@@ -133,9 +133,6 @@ void Dom0_server::serve()
 
 			PDBG("Done with reveiving task description.");
 
-			// Parse XML file to receive the optimization goal.
-			//_controller.set_opt_goal(xml_ds.cap());
-
 		}
 		else if (message == CLEAR)
 		{
@@ -197,11 +194,6 @@ void Dom0_server::serve()
 		}
 		else if (message == START)
 		{
-			// start optimization
-			PDBG("Sarting the optimization.");
-			_controller.optimize();
-			PDBG("Done with starting the optimization.");
-			
 			// start the tasks
 			PDBG("Starting tasks.");
 			_task_loader.start();
