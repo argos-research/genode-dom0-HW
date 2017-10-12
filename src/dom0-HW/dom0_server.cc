@@ -241,7 +241,7 @@ void Dom0_server::serve()
 
 			// Get XML file.
 			NETCHECK_LOOP(receive_data(xml_ds.local_addr<char>(), xml_size));
-			PDBG("Received XML. Setting optimization goal.");
+			PDBG("Received XML. Updating optimization goal.");
 			_controller.set_opt_goal(xml_ds.cap());
 			PDBG("Done with receiving optimization goal.");
 			

@@ -49,6 +49,7 @@ set config {
 		<service name="SIGNAL"/>
 		<service name="TRACE"/>
 	</parent-provides>
+	<affinity-space width="2" />
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
@@ -96,7 +97,7 @@ set config {
 		</config>
 	</start>
 	<start name="sync" priority="0">
-		<resource name="RAM" quantum="100M"/>
+		<resource name="RAM" quantum="10M"/>
 		<provides><service name="sync"/></provides>
 	</start>
 }
@@ -141,7 +142,7 @@ append qemu_args "-net vde,sock=/tmp/switch1 "
 append qemu_args "-net nic,model=lan9118,macaddr=02:00:00:00:01:01 "
 
 set boot_modules {
-	core init dom0-HW taskloader parser sync sched_controller mon_manager utilization
+	core init dom0-HW taskloader parser sync sched_controller mon_manager utilization gen_load_finite
 	timer
 	ld.lib.so
 	libc.lib.so
