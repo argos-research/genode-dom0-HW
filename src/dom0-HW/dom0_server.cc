@@ -201,10 +201,10 @@ void Dom0_server::serve()
 			_task_loader.stop();
 			PDBG("Done.");
 		}
-		/*else if (message == GET_PROFILE)
+		else if (message == GET_PROFILE)
 		{
-			Genode::Dataspace_capability xmlDsCap = _parser.profile_data();
-			Genode::Rm_session* rm = Genode::env()->rm_session();
+			Genode::Dataspace_capability xmlDsCap = _task_loader.profile_data();
+			Genode::Region_map* rm = Genode::env()->rm_session();
 			char* xml = (char*)rm->attach(xmlDsCap);
 
 			size_t size = std::strlen(xml) + 1;
@@ -214,7 +214,7 @@ void Dom0_server::serve()
 
 			rm->detach(xml);
 			PDBG("Done.");
-		}*/
+		}
 		else
 		{
 			PWRN("Unknown message: %d", message);
