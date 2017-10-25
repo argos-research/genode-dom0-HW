@@ -20,6 +20,7 @@ Dom0_server::Dom0_server() :
 	_task_loader{},
 	_parser{}
 {
+	PINF("------------------------- Start serving \n");
 	lwip_tcpip_init();
 
 	enum { BUF_SIZE = Nic::Packet_allocator::DEFAULT_PACKET_SIZE * 128 };
@@ -87,7 +88,7 @@ Dom0_server::Dom0_server() :
 		PERR("Listen failed!");
 		return;
 	}
-	PINF("Listening...\n");
+	PINF("-------------------------Listening...\n");
 }
 
 Dom0_server::~Dom0_server()
@@ -129,13 +130,15 @@ void Dom0_server::serve()
 			NETCHECK_LOOP(receive_data(xml_ds.local_addr<char>(), xml_size));
 			PDBG("Received XML. Initializing tasks.");
 			_task_loader.add_tasks(xml_ds.cap());
-			PDBG("Done.");
+
+			PDBG("Done with reveiving task description.");
+
 		}
 		else if (message == CLEAR)
 		{
 			PDBG("Clearing tasks.");
 			_task_loader.clear_tasks();
-			PDBG("Done.");
+			PDBG("Done with cleaning tasks.");
 		}
 		else if (message == SEND_BINARIES)
 		{
@@ -169,7 +172,7 @@ void Dom0_server::serve()
 				PINF("Got binary '%s' of size %d.", name_ds.local_addr<char>(), binary_size);
 				rm->detach(bin);
 			}
-			PDBG("Done.");
+			PDBG("Done with receiving binaries.");
 		}
 		else if (message == GET_LIVE)
 		{
@@ -191,15 +194,16 @@ void Dom0_server::serve()
 		}
 		else if (message == START)
 		{
+			// start the tasks
 			PDBG("Starting tasks.");
 			_task_loader.start();
-			PDBG("Done.");
+			PDBG("Done with starting tasks.");
 		}
 		else if (message == STOP)
 		{
 			PDBG("Stopping tasks.");
 			_task_loader.stop();
-			PDBG("Done.");
+			PDBG("Done with stopping tasks.");
 		}
 		/*else if (message == GET_PROFILE)
 		{
@@ -215,6 +219,26 @@ void Dom0_server::serve()
 			rm->detach(xml);
 			PDBG("Done.");
 		}*/
+
+		else if (message == OPTIMIZE)
+		{
+
+			PDBG("Ready to receive optimization goal.");
+
+			// Get XML size.
+			int xml_size;
+			NETCHECK_LOOP(receiveInt32_t(xml_size));
+			Genode::Attached_ram_dataspace xml_ds(Genode::env()->ram_session(), xml_size);
+			PINF("Ready to receive XML of size %d.", xml_size);
+
+			// Get XML file.
+			NETCHECK_LOOP(receive_data(xml_ds.local_addr<char>(), xml_size));
+			PDBG("Received XML. Updating optimization goal.");
+			_controller.set_opt_goal(xml_ds.cap());
+			PDBG("Done with receiving optimization goal.");
+			
+		}
+
 		else
 		{
 			PWRN("Unknown message: %d", message);
