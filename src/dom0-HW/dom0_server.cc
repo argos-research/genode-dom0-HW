@@ -162,21 +162,12 @@ void Dom0_server::serve()
 		{
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_stop(_target_socket);
-			PDBG("Done START. Took: %d",timer.elapsed_ms()-time_before);
+			PDBG("Done STOP. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == GET_PROFILE)
 		{
 			int time_before=timer.elapsed_ms();
-			Genode::Dataspace_capability xmlDsCap = _task_loader.profile_data();
-			Genode::Region_map* rm = Genode::env()->rm_session();
-			char* xml = (char*)rm->attach(xmlDsCap);
-
-			size_t size = std::strlen(xml) + 1;
-			PINF("Sending profile data of size %d", size);
-			NETCHECK_LOOP(sendInt32_t(size));
-			NETCHECK_LOOP(send_data(xml, size));
-
-			rm->detach(xml);
+			_starter_thread.do_send_profile(_target_socket);
 			PDBG("Done GET_PROFILE. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else
@@ -214,7 +205,7 @@ void Dom0_server::Child_starter_thread::do_start(int target_socket)
 
 void Dom0_server::Child_starter_thread::do_stop(int target_socket)
 {
-	PDBG("Starting tasks.");
+	PDBG("SStopping tasks.");
 	_task_loader.stop();
 	std::string foo="1";
 	int32_t size=foo.size();
@@ -226,7 +217,7 @@ void Dom0_server::Child_starter_thread::do_stop(int target_socket)
 
 void Dom0_server::Child_starter_thread::do_clear(int target_socket)
 {
-	PDBG("Starting tasks.");
+	PDBG("Clearing tasks.");
 	_task_loader.clear_tasks();
 	std::string foo="1";
 	int32_t size=foo.size();
@@ -287,6 +278,18 @@ void Dom0_server::Child_starter_thread::do_send_binaries(int target_socket)
 		PINF("Got binary '%s' of size %d.", name_ds.local_addr<char>(), binary_size);
 		rm->detach(bin);
 	}
+}
+
+void Dom0_server::Child_starter_thread::do_send_profile(int target_socket)
+{
+	Genode::Dataspace_capability xmlDsCap = _task_loader.profile_data();
+	Genode::Region_map* rm = Genode::env()->rm_session();
+	char* xml = (char*)rm->attach(xmlDsCap);
+	size_t size = std::strlen(xml) + 1;
+	PINF("Sending profile data of size %d", size);
+	lwip_write(target_socket,&size,4);
+	lwip_write(target_socket,xml,size);
+	rm->detach(xml);
 }
 
 // Receive data from the socket and write it into data.
