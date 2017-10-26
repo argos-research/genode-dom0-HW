@@ -117,62 +117,25 @@ void Dom0_server::serve()
 		NETCHECK_LOOP(receiveInt32_t(message));
 		if (message == SEND_DESCS)
 		{
-			PDBG("Ready to receive task description.");
-
-			// Get XML size.
-			int xml_size;
-			NETCHECK_LOOP(receiveInt32_t(xml_size));
-			Genode::Attached_ram_dataspace xml_ds(Genode::env()->ram_session(), xml_size);
-			PINF("Ready to receive XML of size %d.", xml_size);
-
-			// Get XML file.
-			NETCHECK_LOOP(receive_data(xml_ds.local_addr<char>(), xml_size));
-			PDBG("Received XML. Initializing tasks.");
-			_task_loader.add_tasks(xml_ds.cap());
-			PDBG("Done.");
+			int time_before=timer.elapsed_ms();
+			_starter_thread.do_send_descs(_target_socket);
+			PDBG("Done SEND_DESCS. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == CLEAR)
 		{
-			PDBG("Clearing tasks.");
-			_task_loader.clear_tasks();
-			PDBG("Done.");
+			int time_before=timer.elapsed_ms();
+			_starter_thread.do_clear(_target_socket);
+			PDBG("Done START. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == SEND_BINARIES)
 		{
-			PDBG("Ready to receive binaries.");
-
-			// Get number of binaries to receive.
-			int num_binaries = 0;
-			NETCHECK_LOOP(receiveInt32_t(num_binaries));
-			PINF("%d binar%s to be sent.", num_binaries, num_binaries == 1 ? "y" : "ies");
-
-			// Receive binaries.
-			for (int i = 0; i < num_binaries; i++)
-			{
-				// Client is waiting for ready signal.
-				NETCHECK_LOOP(sendInt32_t(GO_SEND));
-
-				// Get binary name.
-				Genode::Attached_ram_dataspace name_ds(Genode::env()->ram_session(), 16);
-				NETCHECK_LOOP(receive_data(name_ds.local_addr<char>(), 16));
-
-				// Get binary size.
-				int32_t binary_size = 0;
-				NETCHECK_LOOP(receiveInt32_t(binary_size));
-
-				// Get binary data.
-				Genode::Dataspace_capability binDsCap = _task_loader.binary_ds(name_ds.cap(), binary_size);
-				Genode::Region_map* rm = Genode::env()->rm_session();
-				char* bin = (char*)rm->attach(binDsCap);
-				NETCHECK_LOOP(receive_data(bin, binary_size));
-
-				PINF("Got binary '%s' of size %d.", name_ds.local_addr<char>(), binary_size);
-				rm->detach(bin);
-			}
-			PDBG("Done.");
+			int time_before=timer.elapsed_ms();
+			_starter_thread.do_send_binaries(_target_socket);
+			PDBG("Done SEND_BINARIES. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == GET_LIVE)
 		{
+			int time_before=timer.elapsed_ms();
 			//stats_proto stats = {};
 			//char *name="dom0";
 			//stats_display();
@@ -187,22 +150,23 @@ void Dom0_server::serve()
 			NETCHECK_LOOP(send_data(xml, size));
 
 			rm->detach(xml);
-			//PDBG("Done.");
+			PDBG("Done GET_LIVE. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == START)
 		{
-			PDBG("Starting tasks.");
-			_task_loader.start();
-			PDBG("Done.");
+			int time_before=timer.elapsed_ms();
+			_starter_thread.do_start(_target_socket);
+			PDBG("Done START. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == STOP)
 		{
-			PDBG("Stopping tasks.");
-			_task_loader.stop();
-			PDBG("Done.");
+			int time_before=timer.elapsed_ms();
+			_starter_thread.do_stop(_target_socket);
+			PDBG("Done START. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == GET_PROFILE)
 		{
+			int time_before=timer.elapsed_ms();
 			Genode::Dataspace_capability xmlDsCap = _task_loader.profile_data();
 			Genode::Region_map* rm = Genode::env()->rm_session();
 			char* xml = (char*)rm->attach(xmlDsCap);
@@ -213,7 +177,7 @@ void Dom0_server::serve()
 			NETCHECK_LOOP(send_data(xml, size));
 
 			rm->detach(xml);
-			PDBG("Done.");
+			PDBG("Done GET_PROFILE. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else
 		{
@@ -229,3 +193,129 @@ void Dom0_server::disconnect()
 	lwip_close(_listen_socket);
 	PERR("Server socket closed.");
 }
+
+Dom0_server::Child_starter_thread::Child_starter_thread() :
+	Thread_deprecated{"child_starter"}
+{
+	start();
+}
+
+void Dom0_server::Child_starter_thread::do_start(int target_socket)
+{
+	PDBG("Starting tasks.");
+	_task_loader.start();
+	std::string foo="1";
+	int32_t size=foo.size();
+	/* Send size of serialized String to SD2 */
+	lwip_write(target_socket,&size,4);
+	/* Send serialized String to SD2 */
+	lwip_write(target_socket,(void*)foo.c_str(),foo.size());
+}
+
+void Dom0_server::Child_starter_thread::do_stop(int target_socket)
+{
+	PDBG("Starting tasks.");
+	_task_loader.stop();
+	std::string foo="1";
+	int32_t size=foo.size();
+	/* Send size of serialized String to SD2 */
+	lwip_write(target_socket,&size,4);
+	/* Send serialized String to SD2 */
+	lwip_write(target_socket,(void*)foo.c_str(),foo.size());
+}
+
+void Dom0_server::Child_starter_thread::do_clear(int target_socket)
+{
+	PDBG("Starting tasks.");
+	_task_loader.clear_tasks();
+	std::string foo="1";
+	int32_t size=foo.size();
+	/* Send size of serialized String to SD2 */
+	lwip_write(target_socket,&size,4);
+	/* Send serialized String to SD2 */
+	lwip_write(target_socket,(void*)foo.c_str(),foo.size());
+}
+
+void Dom0_server::Child_starter_thread::do_send_descs(int target_socket)
+{
+	PDBG("Ready to receive task description.");
+
+	// Get XML size.
+	int xml_size;
+	lwip_read(target_socket, &xml_size, ntohl(4));
+	Genode::Attached_ram_dataspace xml_ds(Genode::env()->ram_session(), xml_size);
+	PINF("Ready to receive XML of size %d.", xml_size);
+
+	// Get XML file.
+	thread_receive_data(xml_ds.local_addr<char>(), xml_size,target_socket);
+	PDBG("Received XML. Initializing tasks.");
+	_task_loader.add_tasks(xml_ds.cap());
+	std::string foo="1";
+	int32_t size=foo.size();
+	/* Send size of serialized String to SD2 */
+	lwip_write(target_socket,&size,4);
+	/* Send serialized String to SD2 */
+	lwip_write(target_socket,(void*)foo.c_str(),foo.size());
+}
+
+void Dom0_server::Child_starter_thread::do_send_binaries(int target_socket)
+{
+	PDBG("Ready to receive binaries.");
+
+	// Get number of binaries to receive.
+	int num_binaries = 0;
+	lwip_read(target_socket, &num_binaries, ntohl(4));
+	PINF("%d binar%s to be sent.", num_binaries, num_binaries == 1 ? "y" : "ies");
+
+	// Receive binaries.
+	for (int i = 0; i < num_binaries; i++)
+	{
+		// Client is waiting for ready signal.
+		int32_t message=GO_SEND;
+		lwip_write(target_socket,&message,4);
+		// Get binary name.
+		Genode::Attached_ram_dataspace name_ds(Genode::env()->ram_session(), 16);
+		thread_receive_data(name_ds.local_addr<char>(), 16, target_socket);
+		// Get binary size.
+		int32_t binary_size = 0;
+		lwip_read(target_socket, &binary_size, ntohl(4));
+		// Get binary data.
+		Genode::Dataspace_capability binDsCap = _task_loader.binary_ds(name_ds.cap(), binary_size);
+		Genode::Region_map* rm = Genode::env()->rm_session();
+		char* bin = (char*)rm->attach(binDsCap);
+		thread_receive_data(bin, binary_size, target_socket);
+		PINF("Got binary '%s' of size %d.", name_ds.local_addr<char>(), binary_size);
+		rm->detach(bin);
+	}
+}
+
+// Receive data from the socket and write it into data.
+ssize_t Dom0_server::Child_starter_thread::thread_receive_data(void* data, size_t size, int _target_socket)
+{
+	ssize_t result = 0;
+	ssize_t position = 0;
+	// Because read() might actually read less than size bytes
+	// before it returns, we call it in a loop
+	// until size bytes have been read.
+	do
+	{
+		result = lwip_read(_target_socket, (char*) data + position, size - position);
+		if (result < 1)
+		{
+			return -errno;
+		}
+		position += result;
+
+	} while ((size_t) position < size);
+
+	return position;
+}
+
+void Dom0_server::Child_starter_thread::entry()
+{
+	while (true)
+	{
+	}
+}
+
+Dom0_server::Child_starter_thread Dom0_server::_starter_thread;

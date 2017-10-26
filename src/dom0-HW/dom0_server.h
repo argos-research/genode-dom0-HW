@@ -3,6 +3,7 @@
 #include "tcp_socket.h"
 #include <taskloader/taskloader_connection.h>
 #include <parser/parser_connection.h>
+#include <timer_session/connection.h>
 
 /*extern "C" {
 #include <lwip/stats.h>
@@ -26,10 +27,31 @@ public:
 
 	void disconnect();
 
+	void start();
+
 private:
+	class Child_starter_thread : Genode::Thread_deprecated<2*4096>
+	{
+	public:
+		Child_starter_thread();
+		void do_start(int _target_socket);
+		void do_stop(int _target_socket);
+		void do_clear(int _target_socket);
+		void do_send_descs(int _target_socket);
+		void do_send_binaries(int _target_socket);
+		ssize_t thread_receive_data(void* data, size_t size, int _target_socket);
+
+	private:
+		Timer::Connection _timer;
+		Taskloader_connection _task_loader;
+		void entry() override;
+	};
+
 	int _listen_socket;
 	struct sockaddr_in _in_addr;
 	sockaddr _target_addr;
 	Taskloader_connection _task_loader;
 	Parser_connection _parser;
+	Timer::Connection timer;
+	static Child_starter_thread _starter_thread;
 };
