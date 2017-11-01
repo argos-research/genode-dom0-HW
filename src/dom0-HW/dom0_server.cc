@@ -27,6 +27,15 @@ Dom0_server::Dom0_server() :
 	Genode::Xml_node network = Genode::config()->xml_node().sub_node("network");
 
 	_in_addr.sin_family = AF_INET;
+
+	/* set listen port from config */
+	char port[5] = {0};
+	network.attribute("port").value(port, sizeof(port));
+
+	_in_addr.sin_port = htons(atoi(port));
+
+	/* set listen address to any */
+	_in_addr.sin_addr.s_addr = INADDR_ANY;
 	
 	if (network.attribute_value<bool>("dhcp", true))
 	{
@@ -44,7 +53,6 @@ Dom0_server::Dom0_server() :
 		PDBG("Waiting 10s for ip assignement");
 		Timer::Connection timer;
 		timer.msleep(10000);
-		_in_addr.sin_addr.s_addr = INADDR_ANY;
 	}
 	else
 	{
@@ -52,14 +60,10 @@ Dom0_server::Dom0_server() :
 		char ip_addr[16] = {0};
 		char subnet[16] = {0};
 		char gateway[16] = {0};
-		char port[5] = {0};
 
 		network.attribute("ip-address").value(ip_addr, sizeof(ip_addr));
 		network.attribute("subnet-mask").value(subnet, sizeof(subnet));
 		network.attribute("default-gateway").value(gateway, sizeof(gateway));
-		network.attribute("port").value(port, sizeof(port));
-
-		_in_addr.sin_port = htons(atoi(port));
 
 		if (lwip_nic_init(inet_addr(ip_addr),
 		                  inet_addr(subnet),
@@ -69,7 +73,6 @@ Dom0_server::Dom0_server() :
 			PERR("lwip init failed!");
 			return;
 		}
-		_in_addr.sin_addr.s_addr = inet_addr(ip_addr);
 	}
 
 	if ((_listen_socket = lwip_socket(AF_INET, SOCK_STREAM, 0)) < 0)
