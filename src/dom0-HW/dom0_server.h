@@ -4,6 +4,15 @@
 #include <taskloader/taskloader_connection.h>
 #include <parser/parser_connection.h>
 #include <timer_session/connection.h>
+#include <rtcr_session/connection.h>
+#include <base/env.h>
+#include <base/component.h>
+#include <base/heap.h>
+#include <base/service.h>
+#include <rtcr/target_child.h>
+#include <rtcr/target_state.h>
+#include <rtcr/checkpointer.h>
+#include <rtcr/restorer.h>
 
 /*extern "C" {
 #include <lwip/stats.h>
@@ -17,7 +26,7 @@ bool attribute_value(const Genode::Xml_node& config_node, const char* type, char
 class Dom0_server : public Tcp_socket
 {
 public:
-	Dom0_server();
+	Dom0_server(Genode::Env &env);
 
 	~Dom0_server();
 
@@ -48,11 +57,13 @@ private:
 		void entry() override;
 	};
 
+	Genode::Env &_env;
 	int _listen_socket;
 	struct sockaddr_in _in_addr;
 	sockaddr _target_addr;
 	Taskloader_connection _task_loader;
 	Parser_connection _parser;
 	Timer::Connection timer;
+	Rtcr::Connection _rtcr;
 	static Child_starter_thread _starter_thread;
 };

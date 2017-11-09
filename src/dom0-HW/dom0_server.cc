@@ -13,12 +13,14 @@
 #include <timer_session/connection.h>
 #include <os/config.h>
 
-Dom0_server::Dom0_server() :
+Dom0_server::Dom0_server(Genode::Env &env) :
 	_listen_socket(0),
 	_in_addr{0},
 	_target_addr{0},
 	_task_loader{},
-	_parser{}
+	_parser{},
+	_env{env},
+	_rtcr{env}
 {
 	lwip_tcpip_init();
 
@@ -115,17 +117,48 @@ void Dom0_server::serve()
 	while (true)
 	{
 		NETCHECK_LOOP(receiveInt32_t(message));
-		if (message == SEND_DESCS)
+		if (message == CHECKPOINT)
 		{
+			Timer::Connection timer { _env };
+			Genode::Heap              heap            { _env.ram(), _env.rm() };
+			Genode::Service_registry  parent_services { };
+			_Target_child child { _env, heap, parent_services, "sheep_counter", 0 };
+			child.start();
+
+			timer.msleep(3000);
+		
+			Target_state ts(env, heap);
+			Checkpointer ckpt(heap, child, ts);
+			ckpt.checkpoint();
+
+			Target_child child_restored { env, heap, parent_services, "sheep_counter", 0 };
+			Restorer resto(heap, child_restored, ts);
+			child_restored.start(resto);
+		}
+		else if (message == SEND_DESCS)
+		{
+			PDBG("Ready to receive descs\n");
+			std::string foo="1";
+                        int32_t size=foo.size();
+                        /* Send size of serialized String to SD2 */
+                        lwip_write(_target_socket,&size,4);
+                        /* Send serialized String to SD2 */
+                        lwip_write(_target_socket,(void*)foo.c_str(),foo.size());
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_send_descs(_target_socket);
 			PDBG("Done SEND_DESCS. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == CLEAR)
 		{
+			std::string foo="1";
+                        int32_t size=foo.size();
+                        /* Send size of serialized String to SD2 */
+                        lwip_write(_target_socket,&size,4);
+                        /* Send serialized String to SD2 */
+                        lwip_write(_target_socket,(void*)foo.c_str(),foo.size());
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_clear(_target_socket);
-			PDBG("Done START. Took: %d",timer.elapsed_ms()-time_before);
+			PDBG("Done CLEAR. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == SEND_BINARIES)
 		{
@@ -154,12 +187,24 @@ void Dom0_server::serve()
 		}
 		else if (message == START)
 		{
+			std::string foo="1";
+        		int32_t size=foo.size();
+        		/* Send size of serialized String to SD2 */
+        		lwip_write(_target_socket,&size,4);
+        		/* Send serialized String to SD2 */
+        		lwip_write(_target_socket,(void*)foo.c_str(),foo.size());
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_start(_target_socket);
 			PDBG("Done START. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == STOP)
 		{
+			std::string foo="1";
+                        int32_t size=foo.size();
+                        /* Send size of serialized String to SD2 */
+                        lwip_write(_target_socket,&size,4);
+                        /* Send serialized String to SD2 */
+                        lwip_write(_target_socket,(void*)foo.c_str(),foo.size());
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_stop(_target_socket);
 			PDBG("Done STOP. Took: %d",timer.elapsed_ms()-time_before);
@@ -172,7 +217,7 @@ void Dom0_server::serve()
 		}
 		else
 		{
-			PWRN("Unknown message: %d", message);
+			//PWRN("Unknown message: %d", message);
 		}
 	}
 }
@@ -195,36 +240,18 @@ void Dom0_server::Child_starter_thread::do_start(int target_socket)
 {
 	PDBG("Starting tasks.");
 	_task_loader.start();
-	std::string foo="1";
-	int32_t size=foo.size();
-	/* Send size of serialized String to SD2 */
-	lwip_write(target_socket,&size,4);
-	/* Send serialized String to SD2 */
-	lwip_write(target_socket,(void*)foo.c_str(),foo.size());
 }
 
 void Dom0_server::Child_starter_thread::do_stop(int target_socket)
 {
-	PDBG("SStopping tasks.");
+	PDBG("Stopping tasks.");
 	_task_loader.stop();
-	std::string foo="1";
-	int32_t size=foo.size();
-	/* Send size of serialized String to SD2 */
-	lwip_write(target_socket,&size,4);
-	/* Send serialized String to SD2 */
-	lwip_write(target_socket,(void*)foo.c_str(),foo.size());
 }
 
 void Dom0_server::Child_starter_thread::do_clear(int target_socket)
 {
 	PDBG("Clearing tasks.");
 	_task_loader.clear_tasks();
-	std::string foo="1";
-	int32_t size=foo.size();
-	/* Send size of serialized String to SD2 */
-	lwip_write(target_socket,&size,4);
-	/* Send serialized String to SD2 */
-	lwip_write(target_socket,(void*)foo.c_str(),foo.size());
 }
 
 void Dom0_server::Child_starter_thread::do_send_descs(int target_socket)
@@ -241,12 +268,6 @@ void Dom0_server::Child_starter_thread::do_send_descs(int target_socket)
 	thread_receive_data(xml_ds.local_addr<char>(), xml_size,target_socket);
 	PDBG("Received XML. Initializing tasks.");
 	_task_loader.add_tasks(xml_ds.cap());
-	std::string foo="1";
-	int32_t size=foo.size();
-	/* Send size of serialized String to SD2 */
-	lwip_write(target_socket,&size,4);
-	/* Send serialized String to SD2 */
-	lwip_write(target_socket,(void*)foo.c_str(),foo.size());
 }
 
 void Dom0_server::Child_starter_thread::do_send_binaries(int target_socket)
