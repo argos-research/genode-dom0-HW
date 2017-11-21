@@ -1,5 +1,10 @@
 #pragma once
 
+/* protobuf includes */
+#include <target_state.pb.h>
+
+#define timeval timeval_linux
+
 #include "tcp_socket.h"
 #include <taskloader/taskloader_connection.h>
 #include <parser/parser_connection.h>
@@ -9,10 +14,7 @@
 #include <base/component.h>
 #include <base/heap.h>
 #include <base/service.h>
-#include <rtcr/target_child.h>
-#include <rtcr/target_state.h>
-#include <rtcr/checkpointer.h>
-#include <rtcr/restorer.h>
+
 
 /*extern "C" {
 #include <lwip/stats.h>

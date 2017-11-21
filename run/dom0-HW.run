@@ -13,6 +13,7 @@ if {[expr !$use_usb_driver && !$use_nic_driver]} {
 
 set build_components {
 	core init dom0-HW parser taskloader mon_manager utilization sched_controller sync
+	rtcr test/sheep_counter test/arbitrary_child
 	drivers/timer
 	drivers/nic
 }
@@ -59,18 +60,18 @@ set config {
         	<provides><service name="mon_manager"/></provides>
         </start>
 	<start name="utilization">
-        	<resource name="RAM" quantum="10M"/>
+        	<resource name="RAM" quantum="1M"/>
         	<provides><service name="utilization"/></provides>
         </start>
 	<start name="dom0-HW">
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="dom0"/></provides>
 		<config>
-			<network dhcp="no" ip-address="192.168.217.21" subnet-mask="255.255.255.0" default-gateway="192.168.217.1" port="3001"/>
+			<network dhcp="no" ip-address="192.168.218.21" subnet-mask="255.255.255.0" default-gateway="192.168.217.1" port="3001"/>
 		</config>
 	</start>
 	<start name="taskloader">
-		<resource name="RAM" quantum="40M"/>
+		<resource name="RAM" quantum="20M"/>
 		<provides><service name="taskloader"/></provides>
 		<config>
 			<trace quota="10M" buf-size="1M"/>
@@ -78,20 +79,24 @@ set config {
 		</config>
 	</start>
 	<start name="parser">
-		<resource name="RAM" quantum="40M"/>
+		<resource name="RAM" quantum="10M"/>
 		<provides> <service name="parser"/> </provides>
 		<config>
-			<trace quota="20M" buf-size="10M"/>
-			<profile ds-size="20M"/>
+			<trace quota="1M" buf-size="1M"/>
+			<profile ds-size="1M"/>
 		</config>
 	</start>
 	<start name="sched_controller">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="10M"/>
 		<provides> <service name="Sched_controller"/> </provides>
 	</start>
 	<start name="sync">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="sync"/> </provides>
+	</start>
+	<start name="rtcr">
+		<resource name="RAM" quantum="100M"/>
+		<provides> <service name="Rtcr"/> </provides>
 	</start>}
 
 append_if [have_spec gpio] config {
@@ -136,12 +141,15 @@ append_if [expr ![have_spec zybo]] qemu_args "-net nic,model=lan9118 "
 
 set boot_modules {
 	core init dom0-HW taskloader parser mon_manager utilization sched_controller sync
+	rtcr sheep_counter arbitrary_child
 	timer
 	ld.lib.so
 	libc.lib.so
 	stdcxx.lib.so
 	lwip.lib.so
 	libm.lib.so
+	libprotobuf.lib.so
+	zlib.lib.so
 }
 
 # platform-specific modules

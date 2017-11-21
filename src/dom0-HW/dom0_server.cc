@@ -13,6 +13,12 @@
 #include <timer_session/connection.h>
 #include <os/config.h>
 
+/* Rtcr includes */
+#include "rtcr/target_child.h"
+#include "rtcr/target_state.h"
+#include "rtcr/checkpointer.h"
+#include "rtcr/restorer.h"
+
 Dom0_server::Dom0_server(Genode::Env &env) :
 	_listen_socket(0),
 	_in_addr{0},
@@ -122,17 +128,18 @@ void Dom0_server::serve()
 			Timer::Connection timer { _env };
 			Genode::Heap              heap            { _env.ram(), _env.rm() };
 			Genode::Service_registry  parent_services { };
-			_Target_child child { _env, heap, parent_services, "sheep_counter", 0 };
+			Rtcr::Target_child child { _env, heap, parent_services, "sheep_counter", 0 };
 			child.start();
 
 			timer.msleep(3000);
 		
-			Target_state ts(env, heap);
-			Checkpointer ckpt(heap, child, ts);
+			Rtcr::Target_state ts(_env, heap);
+			ts._stored_pd_sessions;
+			Rtcr::Checkpointer ckpt(heap, child, ts);
 			ckpt.checkpoint();
 
-			Target_child child_restored { env, heap, parent_services, "sheep_counter", 0 };
-			Restorer resto(heap, child_restored, ts);
+			Rtcr::Target_child child_restored { _env, heap, parent_services, "sheep_counter", 0 };
+			Rtcr::Restorer resto(heap, child_restored, ts);
 			child_restored.start(resto);
 		}
 		else if (message == SEND_DESCS)
