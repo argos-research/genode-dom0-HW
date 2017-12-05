@@ -1,7 +1,7 @@
 proto_cc := $(wildcard $(REP_DIR)/../genode-CheckpointRestore-SharedMemory/include/rtcr/proto/build/*.pb.cc)
 proto_h := $(REP_DIR)/../genode-CheckpointRestore-SharedMemory/include/rtcr/proto/build
 TARGET = dom0-HW
-SRC_CC = main.cc tcp_socket.cc dom0_server.cc 
+SRC_CC = main.cc $(proto_cc) tcp_socket.cc dom0_server.cc 
 LIBS = base config lwip stdcxx libprotobuf
 
 INC_DIR += $(REP_DIR)/../genode/repos/libports/include/lwip

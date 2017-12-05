@@ -153,7 +153,7 @@ void Dom0_server::serve()
                         lwip_write(_target_socket,(void*)foo.c_str(),foo.size());
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_send_descs(_target_socket);
-			PDBG("Done SEND_DESCS. Took: %d",timer.elapsed_ms()-time_before);
+			PDBG("Done SEND_DESCS. Took: %lu",timer.elapsed_ms()-time_before);
 		}
 		else if (message == CLEAR)
 		{
@@ -165,13 +165,13 @@ void Dom0_server::serve()
                         lwip_write(_target_socket,(void*)foo.c_str(),foo.size());
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_clear(_target_socket);
-			PDBG("Done CLEAR. Took: %d",timer.elapsed_ms()-time_before);
+			PDBG("Done CLEAR. Took: %lu",timer.elapsed_ms()-time_before);
 		}
 		else if (message == SEND_BINARIES)
 		{
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_send_binaries(_target_socket);
-			PDBG("Done SEND_BINARIES. Took: %d",timer.elapsed_ms()-time_before);
+			PDBG("Done SEND_BINARIES. Took: %lu",timer.elapsed_ms()-time_before);
 		}
 		else if (message == GET_LIVE)
 		{
@@ -190,7 +190,7 @@ void Dom0_server::serve()
 			NETCHECK_LOOP(send_data(xml, size));
 
 			rm->detach(xml);
-			PDBG("Done GET_LIVE. Took: %d",timer.elapsed_ms()-time_before);
+			PDBG("Done GET_LIVE. Took: %lu",timer.elapsed_ms()-time_before);
 		}
 		else if (message == START)
 		{
@@ -202,7 +202,7 @@ void Dom0_server::serve()
         		lwip_write(_target_socket,(void*)foo.c_str(),foo.size());
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_start(_target_socket);
-			PDBG("Done START. Took: %d",timer.elapsed_ms()-time_before);
+			PDBG("Done START. Took: %lu",timer.elapsed_ms()-time_before);
 		}
 		else if (message == STOP)
 		{
@@ -214,13 +214,13 @@ void Dom0_server::serve()
                         lwip_write(_target_socket,(void*)foo.c_str(),foo.size());
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_stop(_target_socket);
-			PDBG("Done STOP. Took: %d",timer.elapsed_ms()-time_before);
+			PDBG("Done STOP. Took: %lu",timer.elapsed_ms()-time_before);
 		}
 		else if (message == GET_PROFILE)
 		{
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_send_profile(_target_socket);
-			PDBG("Done GET_PROFILE. Took: %d",timer.elapsed_ms()-time_before);
+			PDBG("Done GET_PROFILE. Took: %lu",timer.elapsed_ms()-time_before);
 		}
 		else
 		{
