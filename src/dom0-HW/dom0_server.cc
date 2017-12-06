@@ -190,19 +190,42 @@ void Dom0_server::serve()
 			_cpu_thread.set_sigh_badge(cpu_thread_sigh_badge);
 			_cpu_thread.set_ts(target_state.exception);
 
+			/* RAM Session */
+			/* rtcr */
+			Genode::List<Rtcr::Stored_ram_session_info> _stored_ram_sessions 		= ts._stored_ram_sessions;
+			Rtcr::Stored_ram_session_info ram_session					= *_stored_ram_sessions.first();
+			Genode::List<Rtcr::Stored_ram_dataspace_info> stored_ramds_infos		= ram_session.stored_ramds_infos;
+			Rtcr::Stored_ram_dataspace_info ramds						= *stored_ramds_infos.first();
+			Genode::Ram_dataspace_capability memory_content					= ramds.memory_content;
+			Genode::size_t size								= ramds.size;
+			Genode::Cache_attribute cached							= ramds.cached;
+			bool managed									= ramds.managed;
+			Genode::size_t timestamp							= ramds.timestamp;
+			/* protobuf */
+			protobuf::Stored_ram_session_info _ram_session					= _ts._stored_ram_sessions(0);
+			protobuf::Stored_ram_dataspace_info _ramds					= _ram_session.stored_ramds_infos(0);
+			_ramds.set_size(size);
+			_ramds.set_cached(cached);
+			_ramds.set_managed(managed);
+			_ramds.set_timestamp(timestamp);
 
-
-
-
-
-
-
-			
-			Genode::List<Rtcr::Stored_ram_session_info>    _stored_ram_sessions = ts._stored_ram_sessions;
+			/* ROM Session */
+			/* rtcr */
 			Genode::List<Rtcr::Stored_rom_session_info>    _stored_rom_sessions = ts._stored_rom_sessions;
+			
+			/* RM Session */
+			/* rtcr */
 			Genode::List<Rtcr::Stored_rm_session_info>    _stored_rm_sessions = ts._stored_rm_sessions;
+			
+			/* LOG Session */
+			/* rtcr */
 			Genode::List<Rtcr::Stored_log_session_info>    _stored_log_sessions = ts._stored_log_sessions;
+
+			/* Timer Session */
+			/* rtcr */
 			Genode::List<Rtcr::Stored_timer_session_info>    _stored_timer_sessions = ts._stored_timer_sessions;
+
+
 			Rtcr::Checkpointer ckpt(heap, child, ts);
 			ckpt.checkpoint();
 
