@@ -137,25 +137,58 @@ void Dom0_server::serve()
 		
 			Rtcr::Target_state ts(_env, heap);
 			protobuf::Target_state _ts;
-			Genode::List<Rtcr::Stored_pd_session_info>    _stored_pd_sessions = ts._stored_pd_sessions;
-			Rtcr::Stored_pd_session_info pd_session = *_stored_pd_sessions.first();
-			Genode::List<Rtcr::Stored_signal_context_info> stored_context_infos = pd_session.stored_context_infos;
-			Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos = pd_session.stored_source_infos;
-			Genode::List<Rtcr::Stored_native_capability_info> stored_native_cap_infos = pd_session.stored_native_cap_infos;
-			Rtcr::Stored_signal_context_info context = *stored_context_infos.first();
-			Rtcr::Stored_signal_source_info source = *stored_source_infos.first();
-			Rtcr::Stored_native_capability_info native_capability = *stored_native_cap_infos.first();
-			Genode::uint16_t signal_source_badge = context.signal_source_badge;
-			unsigned long imprint = context.imprint;
-			Genode::uint16_t ep_badge = native_capability.ep_badge;
-			protobuf::Stored_pd_session_info _pd = _ts._stored_pd_sessions(0);
-			protobuf::Stored_signal_context_info _context = _pd.stored_context_infos(0);
+			/* PD Session */
+			/* rtcr */
+			Genode::List<Rtcr::Stored_pd_session_info> _stored_pd_sessions 			= ts._stored_pd_sessions;
+			Rtcr::Stored_pd_session_info pd_session 					= *_stored_pd_sessions.first();
+			Genode::List<Rtcr::Stored_signal_context_info> stored_context_infos 		= pd_session.stored_context_infos;
+			Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos 		= pd_session.stored_source_infos;
+			Genode::List<Rtcr::Stored_native_capability_info> stored_native_cap_infos 	= pd_session.stored_native_cap_infos;
+			Rtcr::Stored_signal_context_info context 					= *stored_context_infos.first();
+			Rtcr::Stored_signal_source_info source 						= *stored_source_infos.first();
+			Rtcr::Stored_native_capability_info native_capability 				= *stored_native_cap_infos.first();
+			Genode::uint16_t signal_source_badge 						= context.signal_source_badge;
+			unsigned long imprint 								= context.imprint;
+			Genode::uint16_t ep_badge 							= native_capability.ep_badge;
+			/* protobuf */
+			protobuf::Stored_pd_session_info _pd 						= _ts._stored_pd_sessions(0);
+			protobuf::Stored_signal_context_info _context					= _pd.stored_context_infos(0);
+			protobuf::Stored_signal_source_info _source 					= _pd.stored_source_infos(0);
+			protobuf::Stored_native_capability_info _native_capability 			= _pd.stored_native_cap_infos(0);
 			_context.set_signal_source_badge(signal_source_badge);
 			_context.set_imprint(imprint);
-			protobuf::Stored_signal_source_info _source = _pd.stored_source_infos(0);
-			protobuf::Stored_native_capability_info _native_capability = _pd.stored_native_cap_infos(0);
 			_native_capability.set_signal_source_badge(ep_badge);
 			
+			/* CPU Session */
+			/* rtcr */
+			Genode::List<Rtcr::Stored_cpu_session_info> _stored_cpu_sessions 		= ts._stored_cpu_sessions;
+			Rtcr::Stored_cpu_session_info cpu_session 					= *_stored_cpu_sessions.first();
+			Genode::uint16_t cpu_session_sigh_badge						= cpu_session.sigh_badge;
+			Genode::List<Rtcr::Stored_cpu_thread_info> stored_cpu_thread_infos		= cpu_session.stored_cpu_thread_infos;
+			Rtcr::Stored_cpu_thread_info cpu_thread						= *stored_cpu_thread_infos.first();
+			Genode::uint16_t pd_session_badge						= cpu_thread.pd_session_badge;
+			Genode::Cpu_session::Name name							= cpu_thread.name;
+			Genode::Cpu_session::Weight weight						= cpu_thread.weight;
+			Genode::addr_t utcb								= cpu_thread.utcb;
+			bool started									= cpu_thread.started;
+			bool paused									= cpu_thread.paused;
+			bool single_step								= cpu_thread.single_step;
+			Genode::Affinity::Location affinity						= cpu_thread.affinity;
+			Genode::uint16_t cpu_thread_sigh_badge						= cpu_thread.sigh_badge;
+			Genode::Thread_state target_state						= cpu_thread.ts;
+			/* protobuf */
+			protobuf::Stored_cpu_session_info _cpu_session 					= _ts._stored_cpu_sessions(0);
+			protobuf::Stored_cpu_thread_info _cpu_thread 					= _cpu_session.stored_cpu_thread_infos(0);
+			_cpu_thread.set_pd_session_badge(pd_session_badge);
+			_cpu_thread.set_name(name.string());
+			_cpu_thread.set_weight(std::to_string(weight.value).c_str());
+			_cpu_thread.set_utcb(utcb);
+			_cpu_thread.set_started(started);
+			_cpu_thread.set_paused(paused);
+			_cpu_thread.set_single_step(single_step);
+			_cpu_thread.set_affinity(affinity.xpos());
+			_cpu_thread.set_sigh_badge(cpu_thread_sigh_badge);
+			_cpu_thread.set_ts(target_state.exception);
 
 
 
@@ -164,7 +197,7 @@ void Dom0_server::serve()
 
 
 
-			Genode::List<Rtcr::Stored_cpu_session_info>    _stored_cpu_sessions = ts._stored_cpu_sessions;
+			
 			Genode::List<Rtcr::Stored_ram_session_info>    _stored_ram_sessions = ts._stored_ram_sessions;
 			Genode::List<Rtcr::Stored_rom_session_info>    _stored_rom_sessions = ts._stored_rom_sessions;
 			Genode::List<Rtcr::Stored_rm_session_info>    _stored_rm_sessions = ts._stored_rm_sessions;
