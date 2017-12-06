@@ -19,6 +19,8 @@
 #include "rtcr/checkpointer.h"
 #include "rtcr/restorer.h"
 
+#include "target_state.pb.h"
+
 Dom0_server::Dom0_server(Genode::Env &env) :
 	_listen_socket(0),
 	_in_addr{0},
@@ -134,7 +136,40 @@ void Dom0_server::serve()
 			timer.msleep(3000);
 		
 			Rtcr::Target_state ts(_env, heap);
-			ts._stored_pd_sessions;
+			protobuf::Target_state _ts;
+			Genode::List<Rtcr::Stored_pd_session_info>    _stored_pd_sessions = ts._stored_pd_sessions;
+			Rtcr::Stored_pd_session_info pd_session = *_stored_pd_sessions.first();
+			Genode::List<Rtcr::Stored_signal_context_info> stored_context_infos = pd_session.stored_context_infos;
+			Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos = pd_session.stored_source_infos;
+			Genode::List<Rtcr::Stored_native_capability_info> stored_native_cap_infos = pd_session.stored_native_cap_infos;
+			Rtcr::Stored_signal_context_info context = *stored_context_infos.first();
+			Rtcr::Stored_signal_source_info source = *stored_source_infos.first();
+			Rtcr::Stored_native_capability_info native_capability = *stored_native_cap_infos.first();
+			Genode::uint16_t signal_source_badge = context.signal_source_badge;
+			unsigned long imprint = context.imprint;
+			Genode::uint16_t ep_badge = native_capability.ep_badge;
+			protobuf::Stored_pd_session_info _pd = _ts._stored_pd_sessions(0);
+			protobuf::Stored_signal_context_info _context = _pd.stored_context_infos(0);
+			_context.set_signal_source_badge(signal_source_badge);
+			_context.set_imprint(imprint);
+			protobuf::Stored_signal_source_info _source = _pd.stored_source_infos(0);
+			protobuf::Stored_native_capability_info _native_capability = _pd.stored_native_cap_infos(0);
+			_native_capability.set_signal_source_badge(ep_badge);
+			
+
+
+
+
+
+
+
+
+			Genode::List<Rtcr::Stored_cpu_session_info>    _stored_cpu_sessions = ts._stored_cpu_sessions;
+			Genode::List<Rtcr::Stored_ram_session_info>    _stored_ram_sessions = ts._stored_ram_sessions;
+			Genode::List<Rtcr::Stored_rom_session_info>    _stored_rom_sessions = ts._stored_rom_sessions;
+			Genode::List<Rtcr::Stored_rm_session_info>    _stored_rm_sessions = ts._stored_rm_sessions;
+			Genode::List<Rtcr::Stored_log_session_info>    _stored_log_sessions = ts._stored_log_sessions;
+			Genode::List<Rtcr::Stored_timer_session_info>    _stored_timer_sessions = ts._stored_timer_sessions;
 			Rtcr::Checkpointer ckpt(heap, child, ts);
 			ckpt.checkpoint();
 
