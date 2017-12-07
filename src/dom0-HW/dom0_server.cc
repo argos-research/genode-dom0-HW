@@ -252,12 +252,21 @@ void Dom0_server::serve()
 			
 			/* LOG Session */
 			/* rtcr */
-			Genode::List<Rtcr::Stored_log_session_info>    _stored_log_sessions = ts._stored_log_sessions;
+			Genode::List<Rtcr::Stored_log_session_info> _stored_log_sessions 		= ts._stored_log_sessions;
+			/* empty */
 
 			/* Timer Session */
 			/* rtcr */
-			Genode::List<Rtcr::Stored_timer_session_info>    _stored_timer_sessions = ts._stored_timer_sessions;
-
+			Genode::List<Rtcr::Stored_timer_session_info> _stored_timer_sessions 		= ts._stored_timer_sessions;
+			Rtcr::Stored_timer_session_info timer_session					= *_stored_timer_sessions.first();
+			Genode::uint16_t sigh_badge							= timer_session.sigh_badge;
+			unsigned         timeout							= timer_session.timeout;
+			bool             periodic							= timer_session.periodic;
+			/* protobuf */
+			protobuf::Stored_timer_session_info _timer_session				= _ts._stored_timer_sessions(0);
+			_timer_session.set_sigh_badge(sigh_badge);
+			_timer_session.set_timeout(timeout);
+			_timer_session.set_perodic(periodic);
 
 			Rtcr::Checkpointer ckpt(heap, child, ts);
 			ckpt.checkpoint();
