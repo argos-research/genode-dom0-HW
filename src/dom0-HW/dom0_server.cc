@@ -142,10 +142,10 @@ void Dom0_server::serve()
 			Genode::List<Rtcr::Stored_pd_session_info> _stored_pd_sessions 			= ts._stored_pd_sessions;
 			Rtcr::Stored_pd_session_info pd_session 					= *_stored_pd_sessions.first();
 			Genode::List<Rtcr::Stored_signal_context_info> stored_context_infos 		= pd_session.stored_context_infos;
-			Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos 		= pd_session.stored_source_infos;
+			//Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos 		= pd_session.stored_source_infos;
 			Genode::List<Rtcr::Stored_native_capability_info> stored_native_cap_infos 	= pd_session.stored_native_cap_infos;
 			Rtcr::Stored_signal_context_info context 					= *stored_context_infos.first();
-			Rtcr::Stored_signal_source_info source 						= *stored_source_infos.first();
+			//Rtcr::Stored_signal_source_info source 					= *stored_source_infos.first();
 			Rtcr::Stored_native_capability_info native_capability 				= *stored_native_cap_infos.first();
 			Genode::uint16_t signal_source_badge 						= context.signal_source_badge;
 			unsigned long imprint 								= context.imprint;
@@ -153,7 +153,7 @@ void Dom0_server::serve()
 			/* protobuf */
 			protobuf::Stored_pd_session_info _pd 						= _ts._stored_pd_sessions(0);
 			protobuf::Stored_signal_context_info _context					= _pd.stored_context_infos(0);
-			protobuf::Stored_signal_source_info _source 					= _pd.stored_source_infos(0);
+			//protobuf::Stored_signal_source_info _source 					= _pd.stored_source_infos(0);
 			protobuf::Stored_native_capability_info _native_capability 			= _pd.stored_native_cap_infos(0);
 			_context.set_signal_source_badge(signal_source_badge);
 			_context.set_imprint(imprint);
@@ -179,6 +179,7 @@ void Dom0_server::serve()
 			/* protobuf */
 			protobuf::Stored_cpu_session_info _cpu_session 					= _ts._stored_cpu_sessions(0);
 			protobuf::Stored_cpu_thread_info _cpu_thread 					= _cpu_session.stored_cpu_thread_infos(0);
+			_cpu_session.set_sigh_badge(cpu_session_sigh_badge);
 			_cpu_thread.set_pd_session_badge(pd_session_badge);
 			_cpu_thread.set_name(name.string());
 			_cpu_thread.set_weight(std::to_string(weight.value).c_str());
@@ -197,14 +198,14 @@ void Dom0_server::serve()
 			Genode::List<Rtcr::Stored_ram_dataspace_info> stored_ramds_infos		= ram_session.stored_ramds_infos;
 			Rtcr::Stored_ram_dataspace_info ramds						= *stored_ramds_infos.first();
 			Genode::Ram_dataspace_capability memory_content					= ramds.memory_content;
-			Genode::size_t size								= ramds.size;
+			Genode::size_t ram_size								= ramds.size;
 			Genode::Cache_attribute cached							= ramds.cached;
 			bool managed									= ramds.managed;
 			Genode::size_t timestamp							= ramds.timestamp;
 			/* protobuf */
 			protobuf::Stored_ram_session_info _ram_session					= _ts._stored_ram_sessions(0);
 			protobuf::Stored_ram_dataspace_info _ramds					= _ram_session.stored_ramds_infos(0);
-			_ramds.set_size(size);
+			_ramds.set_size(ram_size);
 			_ramds.set_cached(cached);
 			_ramds.set_managed(managed);
 			_ramds.set_timestamp(timestamp);
@@ -214,59 +215,59 @@ void Dom0_server::serve()
 			Genode::List<Rtcr::Stored_rom_session_info> _stored_rom_sessions 		= ts._stored_rom_sessions;
 			Rtcr::Stored_rom_session_info rom_session					= *_stored_rom_sessions.first();
 			Genode::uint16_t dataspace_badge						= rom_session.dataspace_badge;
-			Genode::uint16_t sigh_badge							= rom_session.sigh_badge;
+			Genode::uint16_t rom_sigh_badge							= rom_session.sigh_badge;
 			/* protobuf */
 			protobuf::Stored_rom_session_info _rom_session					= _ts._stored_rom_sessions(0);
 			_rom_session.set_dataspace_badge(dataspace_badge);
-			_rom_session.set_sigh_badge(sigh_badge);
+			_rom_session.set_sigh_badge(rom_sigh_badge);
 
 			/* RM Session */
 			/* rtcr */
 			Genode::List<Rtcr::Stored_rm_session_info> _stored_rm_sessions 			= ts._stored_rm_sessions;
-			Rtcr::Stored_rm_session_info rm_session						= *_stored_rm_session.first();
-			Genode::List<Stored_region_map_info> _stored_region_map_infos			= rm_session.stored_region_map_infos;
+			Rtcr::Stored_rm_session_info rm_session						= *_stored_rm_sessions.first();
+			Genode::List<Rtcr::Stored_region_map_info> _stored_region_map_infos		= rm_session.stored_region_map_infos;
 			Rtcr::Stored_region_map_info region_map						= *_stored_region_map_infos.first();
 			Genode::size_t   rm_size							= region_map.size;
 			Genode::uint16_t ds_badge							= region_map.ds_badge;
-			Genode::uint16_t sigh_badge							= region_map.sigh_badge;
-			Genode::List<Stored_attached_region_info> _stored_attached_region_infos		= region_map.stored_attached_region_infos;
-			Stored_attached_region_info attached_region					= *_stored_attached_region_infos.first();
+			Genode::uint16_t rm_sigh_badge							= region_map.sigh_badge;
+			Genode::List<Rtcr::Stored_attached_region_info> _stored_attached_region_infos	= region_map.stored_attached_region_infos;
+			Rtcr::Stored_attached_region_info attached_region				= *_stored_attached_region_infos.first();
 			Genode::uint16_t attached_ds_badge						= attached_region.attached_ds_badge;
 			//Genode::Ram_dataspace_capability const memory_content;
-			Genode::size_t size								= attached_region.size;
+			Genode::size_t attached_rm_size							= attached_region.size;
 			Genode::off_t offset								= attached_region.offset;
 			Genode::addr_t rel_addr								= attached_region.rel_addr;
 			bool executable									= attached_region.executable;
 			/* protobuf */
 			protobuf::Stored_rm_session_info _rm_session					= _ts._stored_rm_sessions(0);
 			protobuf::Stored_region_map_info _region_map_infos				= _rm_session.stored_region_map_infos(0);
-			protobuf::Stored_attached_region_info _attached_region_infos			= _region_map_infos._stored_attached_region_infos(0);
+			protobuf::Stored_attached_region_info _attached_region_infos			= _region_map_infos.stored_attached_region_infos(0);
 			_region_map_infos.set_size(rm_size);
 			_region_map_infos.set_ds_badge(ds_badge);
-			_region_map_infos.set_sigh_badge(sigh_badge);
+			_region_map_infos.set_sigh_badge(rm_sigh_badge);
 			_attached_region_infos.set_attached_ds_badge(attached_ds_badge);
-			_attached_region_infos.set_size(size);
+			_attached_region_infos.set_size(attached_rm_size);
 			_attached_region_infos.set_offset(offset);
 			_attached_region_infos.set_rel_addr(rel_addr);
 			_attached_region_infos.set_executable(executable);
 			
 			/* LOG Session */
 			/* rtcr */
-			Genode::List<Rtcr::Stored_log_session_info> _stored_log_sessions 		= ts._stored_log_sessions;
+			//Genode::List<Rtcr::Stored_log_session_info> _stored_log_sessions 		= ts._stored_log_sessions;
 			/* empty */
 
 			/* Timer Session */
 			/* rtcr */
 			Genode::List<Rtcr::Stored_timer_session_info> _stored_timer_sessions 		= ts._stored_timer_sessions;
 			Rtcr::Stored_timer_session_info timer_session					= *_stored_timer_sessions.first();
-			Genode::uint16_t sigh_badge							= timer_session.sigh_badge;
+			Genode::uint16_t timer_sigh_badge						= timer_session.sigh_badge;
 			unsigned         timeout							= timer_session.timeout;
 			bool             periodic							= timer_session.periodic;
 			/* protobuf */
 			protobuf::Stored_timer_session_info _timer_session				= _ts._stored_timer_sessions(0);
-			_timer_session.set_sigh_badge(sigh_badge);
+			_timer_session.set_sigh_badge(timer_sigh_badge);
 			_timer_session.set_timeout(timeout);
-			_timer_session.set_perodic(periodic);
+			_timer_session.set_periodic(periodic);
 
 			Rtcr::Checkpointer ckpt(heap, child, ts);
 			ckpt.checkpoint();
