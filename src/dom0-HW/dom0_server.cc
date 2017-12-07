@@ -211,11 +211,44 @@ void Dom0_server::serve()
 
 			/* ROM Session */
 			/* rtcr */
-			Genode::List<Rtcr::Stored_rom_session_info>    _stored_rom_sessions = ts._stored_rom_sessions;
-			
+			Genode::List<Rtcr::Stored_rom_session_info> _stored_rom_sessions 		= ts._stored_rom_sessions;
+			Rtcr::Stored_rom_session_info rom_session					= *_stored_rom_sessions.first();
+			Genode::uint16_t dataspace_badge						= rom_session.dataspace_badge;
+			Genode::uint16_t sigh_badge							= rom_session.sigh_badge;
+			/* protobuf */
+			protobuf::Stored_rom_session_info _rom_session					= _ts._stored_rom_sessions(0);
+			_rom_session.set_dataspace_badge(dataspace_badge);
+			_rom_session.set_sigh_badge(sigh_badge);
+
 			/* RM Session */
 			/* rtcr */
-			Genode::List<Rtcr::Stored_rm_session_info>    _stored_rm_sessions = ts._stored_rm_sessions;
+			Genode::List<Rtcr::Stored_rm_session_info> _stored_rm_sessions 			= ts._stored_rm_sessions;
+			Rtcr::Stored_rm_session_info rm_session						= *_stored_rm_session.first();
+			Genode::List<Stored_region_map_info> _stored_region_map_infos			= rm_session.stored_region_map_infos;
+			Rtcr::Stored_region_map_info region_map						= *_stored_region_map_infos.first();
+			Genode::size_t   rm_size							= region_map.size;
+			Genode::uint16_t ds_badge							= region_map.ds_badge;
+			Genode::uint16_t sigh_badge							= region_map.sigh_badge;
+			Genode::List<Stored_attached_region_info> _stored_attached_region_infos		= region_map.stored_attached_region_infos;
+			Stored_attached_region_info attached_region					= *_stored_attached_region_infos.first();
+			Genode::uint16_t attached_ds_badge						= attached_region.attached_ds_badge;
+			//Genode::Ram_dataspace_capability const memory_content;
+			Genode::size_t size								= attached_region.size;
+			Genode::off_t offset								= attached_region.offset;
+			Genode::addr_t rel_addr								= attached_region.rel_addr;
+			bool executable									= attached_region.executable;
+			/* protobuf */
+			protobuf::Stored_rm_session_info _rm_session					= _ts._stored_rm_sessions(0);
+			protobuf::Stored_region_map_info _region_map_infos				= _rm_session.stored_region_map_infos(0);
+			protobuf::Stored_attached_region_info _attached_region_infos			= _region_map_infos._stored_attached_region_infos(0);
+			_region_map_infos.set_size(rm_size);
+			_region_map_infos.set_ds_badge(ds_badge);
+			_region_map_infos.set_sigh_badge(sigh_badge);
+			_attached_region_infos.set_attached_ds_badge(attached_ds_badge);
+			_attached_region_infos.set_size(size);
+			_attached_region_infos.set_offset(offset);
+			_attached_region_infos.set_rel_addr(rel_addr);
+			_attached_region_infos.set_executable(executable);
 			
 			/* LOG Session */
 			/* rtcr */
