@@ -136,6 +136,8 @@ void Dom0_server::serve()
 			timer.msleep(3000);
 		
 			Rtcr::Target_state ts(_env, heap);
+			Rtcr::Checkpointer ckpt(heap, child, ts);
+			ckpt.checkpoint();
 			protobuf::Target_state _ts;
 			/* PD Session */
 			/* rtcr */
@@ -268,9 +270,124 @@ void Dom0_server::serve()
 			_timer_session.set_sigh_badge(timer_sigh_badge);
 			_timer_session.set_timeout(timeout);
 			_timer_session.set_periodic(periodic);
+		}
+		else if (message == RESTORE)
+		{
+			Genode::Heap              heap            { _env.ram(), _env.rm() };
+			Genode::Service_registry  parent_services { };
+			Rtcr::Target_state ts(_env, heap);
+			protobuf::Target_state _ts;
+	
+			/* PD Session */
+			/* rtcr */
+			Genode::List<Rtcr::Stored_pd_session_info> _stored_pd_sessions 			= ts._stored_pd_sessions;
+			Rtcr::Stored_pd_session_info pd_session 					= *_stored_pd_sessions.first();
+			Genode::List<Rtcr::Stored_signal_context_info> stored_context_infos 		= pd_session.stored_context_infos;
+			//Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos 		= pd_session.stored_source_infos;
+			Genode::List<Rtcr::Stored_native_capability_info> stored_native_cap_infos 	= pd_session.stored_native_cap_infos;
+			Rtcr::Stored_signal_context_info context 					= *stored_context_infos.first();
+			//Rtcr::Stored_signal_source_info source 					= *stored_source_infos.first();
+			Rtcr::Stored_native_capability_info native_capability 				= *stored_native_cap_infos.first();
+			/* protobuf */
+			protobuf::Stored_pd_session_info _pd 						= _ts._stored_pd_sessions(0);
+			protobuf::Stored_signal_context_info _context					= _pd.stored_context_infos(0);
+			//protobuf::Stored_signal_source_info _source 					= _pd.stored_source_infos(0);
+			protobuf::Stored_native_capability_info _native_capability 			= _pd.stored_native_cap_infos(0);
+			/* TODO object needed */
+			Genode::uint16_t signal_source_badge = _context.signal_source_badge();
+			unsigned long imprint = _context.imprint();
+			Genode::uint16_t ep_badge = _native_capability.signal_source_badge();
 
-			Rtcr::Checkpointer ckpt(heap, child, ts);
-			ckpt.checkpoint();
+			/* CPU Session */
+                        /* rtcr */
+                        Genode::List<Rtcr::Stored_cpu_session_info> _stored_cpu_sessions                = ts._stored_cpu_sessions;
+                        Rtcr::Stored_cpu_session_info cpu_session                                       = *_stored_cpu_sessions.first();
+                        Genode::uint16_t cpu_session_sigh_badge                                         = cpu_session.sigh_badge;
+                        Genode::List<Rtcr::Stored_cpu_thread_info> stored_cpu_thread_infos              = cpu_session.stored_cpu_thread_inf$
+                        Rtcr::Stored_cpu_thread_info cpu_thread                                         = *stored_cpu_thread_infos.first();
+
+                        /* protobuf */
+                        protobuf::Stored_cpu_session_info _cpu_session                                  = _ts._stored_cpu_sessions(0);
+                        protobuf::Stored_cpu_thread_info _cpu_thread                                    = _cpu_session.stored_cpu_thread_in$
+			/* TODO object needed */
+			Genode::uint16_t cpu_session_sigh_badge                                         = _cpu_session.sigh_badge();
+			Genode::uint16_t pd_session_badge                                               = _cpu_thread.pd_session_badge();
+                        Genode::Cpu_session::Name name                                                  = _cpu_thread.name();
+                        Genode::Cpu_session::Weight weight                                              = _cpu_thread.weight();
+                        Genode::addr_t utcb                                                             = _cpu_thread.utcb();
+                        bool started                                                                    = _cpu_thread.started();
+                        bool paused                                                                     = _cpu_thread.paused();
+                        bool single_step                                                                = _cpu_thread.single_step();
+                        Genode::Affinity::Location affinity                                             = _cpu_thread.affinity();
+                        Genode::uint16_t cpu_thread_sigh_badge                                          = _cpu_thread.sigh_badge();
+                        Genode::Thread_state target_state						= _cpu_thread.ts();
+			
+			 /* RAM Session */
+                        /* rtcr */
+                        Genode::List<Rtcr::Stored_ram_session_info> _stored_ram_sessions                = ts._stored_ram_sessions;
+                        Rtcr::Stored_ram_session_info ram_session                                       = *_stored_ram_sessions.first();
+                        Genode::List<Rtcr::Stored_ram_dataspace_info> stored_ramds_infos                = ram_session.stored_ramds_infos;
+                        Rtcr::Stored_ram_dataspace_info ramds                                           = *stored_ramds_infos.first();
+                        Genode::Ram_dataspace_capability memory_content                                 = ramds.memory_content;
+                        /* protobuf */
+                        protobuf::Stored_ram_session_info _ram_session                                  = _ts._stored_ram_sessions(0);
+                        protobuf::Stored_ram_dataspace_info _ramds                                      = _ram_session.stored_ramds_infos(0$
+                        /* TODO object needed */
+			Genode::Ram_dataspace_capability memory_content                                 = _ramds.memory_content();
+                        Genode::size_t ram_size                                                         = _ramds.size();
+                        Genode::Cache_attribute cached                                                  = _ramds.cached();
+                        bool managed                                                                    = _ramds.managed();
+                        Genode::size_t timestamp							= _ramds.timestamp();
+
+                        /* ROM Session */
+                        /* rtcr */
+                        Genode::List<Rtcr::Stored_rom_session_info> _stored_rom_sessions                = ts._stored_rom_sessions;
+                        Rtcr::Stored_rom_session_info rom_session                                       = *_stored_rom_sessions.first();
+                        /* protobuf */
+                        protobuf::Stored_rom_session_info _rom_session                                  = _ts._stored_rom_sessions(0);
+                        Genode::uint16_t dataspace_badge                                                = _rom_session.dataspace_badge();
+                        Genode::uint16_t rom_sigh_badge                                                 = _rom_session.sigh_badge();
+
+                        /* RM Session */
+                        /* rtcr */
+                        Genode::List<Rtcr::Stored_rm_session_info> _stored_rm_sessions                  = ts._stored_rm_sessions;
+                        Rtcr::Stored_rm_session_info rm_session                                         = *_stored_rm_sessions.first();
+                        Genode::List<Rtcr::Stored_region_map_info> _stored_region_map_infos             = rm_session.stored_region_map_info$
+                        Rtcr::Stored_region_map_info region_map                                         = *_stored_region_map_infos.first();
+                        Genode::List<Rtcr::Stored_attached_region_info> _stored_attached_region_infos   = region_map.stored_attached_region$
+                        Rtcr::Stored_attached_region_info attached_region                               = *_stored_attached_region_infos.fi$
+                        /* protobuf */
+                        protobuf::Stored_rm_session_info _rm_session                                    = _ts._stored_rm_sessions(0);
+                        protobuf::Stored_region_map_info _region_map                              	= _rm_session.stored_region_map_inf$
+			/* TODO object needed */
+			Genode::size_t   rm_size                                                        = _region_map.size();
+                        Genode::uint16_t ds_badge                                                       = _region_map.ds_badge();
+                        Genode::uint16_t rm_sigh_badge                                                  = _region_map.sigh_badge();
+                        protobuf::Stored_attached_region_info _attached_region                    	= _region_map.stored_attached()$
+                        Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
+                        //Genode::Ram_dataspace_capability const memory_content;
+                        Genode::size_t attached_rm_size                                                 = _attached_region.size();
+                        Genode::off_t offset                                                            = _attached_region.offset();
+                        Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
+                        bool executable                                                                 = _attached_region.executable();
+
+
+                        /* LOG Session */
+                        /* rtcr */
+                        //Genode::List<Rtcr::Stored_log_session_info> _stored_log_sessions              = ts._stored_log_sessions;
+                        /* empty */
+
+                        /* Timer Session */
+                        /* rtcr */
+                        Genode::List<Rtcr::Stored_timer_session_info> _stored_timer_sessions            = ts._stored_timer_sessions;
+                        Rtcr::Stored_timer_session_info timer_session                                   = *_stored_timer_sessions.first();
+                        /* protobuf */
+                        protobuf::Stored_timer_session_info _timer_session                              = _ts._stored_timer_sessions(0);
+			/* TODO object needed */
+                        Genode::uint16_t timer_sigh_badge                                               = _timer_session.sigh_badge();
+                        unsigned         timeout                                                        = _timer_session.timeout();
+                        bool             periodic                                                       = _timer_session.periodic();
+
 
 			Rtcr::Target_child child_restored { _env, heap, parent_services, "sheep_counter", 0 };
 			Rtcr::Restorer resto(heap, child_restored, ts);
