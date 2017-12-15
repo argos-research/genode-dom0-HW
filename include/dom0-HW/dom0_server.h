@@ -1,6 +1,8 @@
 #pragma once
 
-#include "tcp_socket.h"
+#include <base/heap.h>
+
+//#include "tcp_socket.h"
 #include <taskloader/taskloader_connection.h>
 #include <parser/parser_connection.h>
 #include <timer_session/connection.h>
@@ -11,10 +13,16 @@
 
 #include <util/xml_node.h>
 
+extern "C" {
+#include <lwip/sockets.h>
+}
+
 // Get XML node attribute if it exists and copy default if not.
 bool attribute_value(const Genode::Xml_node& config_node, const char* type, char* dst, const char* default_val, size_t max_len);
 
-class Dom0_server : public Tcp_socket
+namespace Dom0_server{
+
+class Dom0_server// : public Tcp_socket
 {
 public:
 	Dom0_server();
@@ -28,6 +36,8 @@ public:
 	void disconnect();
 
 	void start();
+
+	void send_profile();
 
 private:
 	class Child_starter_thread : Genode::Thread_deprecated<2*4096>
@@ -48,6 +58,9 @@ private:
 		void entry() override;
 	};
 
+	int _target_socket;
+	struct sockaddr_in _target_sockaddr_in;
+
 	int _listen_socket;
 	struct sockaddr_in _in_addr;
 	sockaddr _target_addr;
@@ -56,3 +69,4 @@ private:
 	Timer::Connection timer;
 	static Child_starter_thread _starter_thread;
 };
+}
