@@ -199,8 +199,13 @@ void Dom0_server::serve()
 			Rtcr::Stored_ram_session_info ram_session					= *_stored_ram_sessions.first();
 			Genode::List<Rtcr::Stored_ram_dataspace_info> stored_ramds_infos		= ram_session.stored_ramds_infos;
 			Rtcr::Stored_ram_dataspace_info ramds						= *stored_ramds_infos.first();
-			Genode::Ram_dataspace_capability memory_content					= ramds.memory_content;
+			Genode::Ram_dataspace_capability ram_memory_content				= ramds.memory_content;
+
+			/* attache capability to send it over network */
+			char* ram_content								= (char*)Genode::env()->rm_session()->attach(ram_memory_content);
 			Genode::size_t ram_size								= ramds.size;
+			lwip_write(_target_socket,ram_content,ram_size);
+
 			Genode::Cache_attribute cached							= ramds.cached;
 			bool managed									= ramds.managed;
 			Genode::size_t timestamp							= ramds.timestamp;
@@ -235,8 +240,14 @@ void Dom0_server::serve()
 			Genode::List<Rtcr::Stored_attached_region_info> _stored_attached_region_infos	= region_map.stored_attached_region_infos;
 			Rtcr::Stored_attached_region_info attached_region				= *_stored_attached_region_infos.first();
 			Genode::uint16_t attached_ds_badge						= attached_region.attached_ds_badge;
-			//Genode::Ram_dataspace_capability const memory_content;
+			Genode::Ram_dataspace_capability rm_memory_content				= attached_region.memory_content;
+			
+			/* attache capability to send it over network */
+			char* rm_content								= (char*)Genode::env()->rm_session()->attach(rm_memory_content);
 			Genode::size_t attached_rm_size							= attached_region.size;
+        		lwip_write(_target_socket,&attached_rm_size,4);
+			lwip_write(_target_socket,rm_content,attached_rm_size);
+			
 			Genode::off_t offset								= attached_region.offset;
 			Genode::addr_t rel_addr								= attached_region.rel_addr;
 			bool executable									= attached_region.executable;
@@ -302,25 +313,25 @@ void Dom0_server::serve()
                         /* rtcr */
                         Genode::List<Rtcr::Stored_cpu_session_info> _stored_cpu_sessions                = ts._stored_cpu_sessions;
                         Rtcr::Stored_cpu_session_info cpu_session                                       = *_stored_cpu_sessions.first();
-                        Genode::uint16_t cpu_session_sigh_badge                                         = cpu_session.sigh_badge;
-                        Genode::List<Rtcr::Stored_cpu_thread_info> stored_cpu_thread_infos              = cpu_session.stored_cpu_thread_inf$
+                        Genode::uint16_t _cpu_session_sigh_badge                                        = cpu_session.sigh_badge;
+                        Genode::List<Rtcr::Stored_cpu_thread_info> stored_cpu_thread_infos              = cpu_session.stored_cpu_thread_infos;
                         Rtcr::Stored_cpu_thread_info cpu_thread                                         = *stored_cpu_thread_infos.first();
 
                         /* protobuf */
                         protobuf::Stored_cpu_session_info _cpu_session                                  = _ts._stored_cpu_sessions(0);
-                        protobuf::Stored_cpu_thread_info _cpu_thread                                    = _cpu_session.stored_cpu_thread_in$
+                        protobuf::Stored_cpu_thread_info _cpu_thread                                    = _cpu_session.stored_cpu_thread_infos(0);
 			/* TODO object needed */
 			Genode::uint16_t cpu_session_sigh_badge                                         = _cpu_session.sigh_badge();
 			Genode::uint16_t pd_session_badge                                               = _cpu_thread.pd_session_badge();
-                        Genode::Cpu_session::Name name                                                  = _cpu_thread.name();
-                        Genode::Cpu_session::Weight weight                                              = _cpu_thread.weight();
+                        //Genode::Cpu_session::Name name                                                  = _cpu_thread.name();
+                        //Genode::Cpu_session::Weight weight                                              = _cpu_thread.weight();
                         Genode::addr_t utcb                                                             = _cpu_thread.utcb();
                         bool started                                                                    = _cpu_thread.started();
                         bool paused                                                                     = _cpu_thread.paused();
                         bool single_step                                                                = _cpu_thread.single_step();
-                        Genode::Affinity::Location affinity                                             = _cpu_thread.affinity();
+                        Genode::Affinity::Location affinity(_cpu_thread.affinity(),0);
                         Genode::uint16_t cpu_thread_sigh_badge                                          = _cpu_thread.sigh_badge();
-                        Genode::Thread_state target_state						= _cpu_thread.ts();
+                        //Genode::Thread_state target_state						= _cpu_thread.ts();
 			
 			 /* RAM Session */
                         /* rtcr */
@@ -328,14 +339,15 @@ void Dom0_server::serve()
                         Rtcr::Stored_ram_session_info ram_session                                       = *_stored_ram_sessions.first();
                         Genode::List<Rtcr::Stored_ram_dataspace_info> stored_ramds_infos                = ram_session.stored_ramds_infos;
                         Rtcr::Stored_ram_dataspace_info ramds                                           = *stored_ramds_infos.first();
-                        Genode::Ram_dataspace_capability memory_content                                 = ramds.memory_content;
                         /* protobuf */
                         protobuf::Stored_ram_session_info _ram_session                                  = _ts._stored_ram_sessions(0);
-                        protobuf::Stored_ram_dataspace_info _ramds                                      = _ram_session.stored_ramds_infos(0$
+                        protobuf::Stored_ram_dataspace_info _ramds                                      = _ram_session.stored_ramds_infos(0);
                         /* TODO object needed */
-			Genode::Ram_dataspace_capability memory_content                                 = _ramds.memory_content();
-                        Genode::size_t ram_size                                                         = _ramds.size();
-                        Genode::Cache_attribute cached                                                  = _ramds.cached();
+			Genode::size_t ram_size                                                         = _ramds.size();
+			Genode::Ram_dataspace_capability _ram_memory_content                            = Genode::env()->ram_session()->alloc(ram_size);
+			char* _ram_content								= (char*)Genode::env()->rm_session()->attach(_ram_memory_content);
+			lwip_read(_target_socket, _ram_content ,ntohl(ram_size));			
+                        //Genode::Cache_attribute cached                                                  = _ramds.cached();
                         bool managed                                                                    = _ramds.managed();
                         Genode::size_t timestamp							= _ramds.timestamp();
 
@@ -352,21 +364,24 @@ void Dom0_server::serve()
                         /* rtcr */
                         Genode::List<Rtcr::Stored_rm_session_info> _stored_rm_sessions                  = ts._stored_rm_sessions;
                         Rtcr::Stored_rm_session_info rm_session                                         = *_stored_rm_sessions.first();
-                        Genode::List<Rtcr::Stored_region_map_info> _stored_region_map_infos             = rm_session.stored_region_map_info$
+                        Genode::List<Rtcr::Stored_region_map_info> _stored_region_map_infos             = rm_session.stored_region_map_infos;
                         Rtcr::Stored_region_map_info region_map                                         = *_stored_region_map_infos.first();
-                        Genode::List<Rtcr::Stored_attached_region_info> _stored_attached_region_infos   = region_map.stored_attached_region$
-                        Rtcr::Stored_attached_region_info attached_region                               = *_stored_attached_region_infos.fi$
+                        Genode::List<Rtcr::Stored_attached_region_info> _stored_attached_region_infos   = region_map.stored_attached_region_infos;
+                        Rtcr::Stored_attached_region_info attached_region                               = *_stored_attached_region_infos.first();
                         /* protobuf */
                         protobuf::Stored_rm_session_info _rm_session                                    = _ts._stored_rm_sessions(0);
-                        protobuf::Stored_region_map_info _region_map                              	= _rm_session.stored_region_map_inf$
+                        protobuf::Stored_region_map_info _region_map                              	= _rm_session.stored_region_map_infos(0);
 			/* TODO object needed */
 			Genode::size_t   rm_size                                                        = _region_map.size();
                         Genode::uint16_t ds_badge                                                       = _region_map.ds_badge();
                         Genode::uint16_t rm_sigh_badge                                                  = _region_map.sigh_badge();
-                        protobuf::Stored_attached_region_info _attached_region                    	= _region_map.stored_attached()$
+                        protobuf::Stored_attached_region_info _attached_region                    	= _region_map.stored_attached_region_infos(0);
                         Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
-                        //Genode::Ram_dataspace_capability const memory_content;
                         Genode::size_t attached_rm_size                                                 = _attached_region.size();
+			Genode::Ram_dataspace_capability _rm_memory_content                             = Genode::env()->ram_session()->alloc(attached_rm_size);
+			char* _rm_content								= (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
+			lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+                        
                         Genode::off_t offset                                                            = _attached_region.offset();
                         Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
                         bool executable                                                                 = _attached_region.executable();

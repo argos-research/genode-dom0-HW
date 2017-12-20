@@ -25,3 +25,5 @@
 #define GET_LIVE 0x159D2
 
 #define CHECKPOINT 0x159D3
+
+#define RESTORE 0x159D4
