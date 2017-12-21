@@ -111,12 +111,67 @@ int Dom0_server::connect()
 	return _target_socket;
 }
 
+// Receive data from the socket and write it into data.
+ssize_t Dom0_server::Child_starter_thread::receive_data(void* data, size_t size, int _target_socket)
+{
+	ssize_t result = 0;
+	ssize_t position = 0;
+	// Because read() might actually read less than size bytes
+	// before it returns, we call it in a loop
+	// until size bytes have been read.
+	do
+	{
+		result = lwip_read(_target_socket, (char*) data + position, size - position);
+		if (result < 1)
+		{
+			return -errno;
+		}
+		position += result;
+
+	} while ((size_t) position < size);
+
+	return position;
+}
+
+// convenience function
+ssize_t Dom0_server::Child_starter_thread::receiveInt32_t(int32_t& data, int _target_socket)
+{
+	return receive_data(&data, sizeof(data), _target_socket);
+}
+
+// Send data from buffer data with size size to the socket.
+ssize_t Dom0_server::Child_starter_thread::send_data(void* data, size_t size, int _target_socket)
+{
+	ssize_t result = 0;
+	ssize_t position = 0;
+
+	// Because write() might actually write less than size bytes
+	// before it returns, we call it in a loop
+	// until size bytes have been written.
+	do
+	{
+		result = lwip_write(_target_socket, (char*) data + position, size - position);
+		if (result < 1)
+			return -errno;
+		position += result;
+
+	} while ((size_t) position < size);
+
+	return position;
+}
+
+// convenience function
+ssize_t Dom0_server::Child_starter_thread::sendInt32_t(int32_t data, int _target_socket)
+{
+	return send_data(&data, sizeof(data), _target_socket);
+}
+
 void Dom0_server::serve()
 {
 	int message = 0;
 	while (true)
 	{
-		lwip_read(_target_socket, &message, 4);
+		NETCHECK_LOOP(_starter_thread.receiveInt32_t(message, _target_socket));
 		if (message == SEND_DESCS)
 		{
 			int time_before=timer.elapsed_ms();
@@ -138,20 +193,7 @@ void Dom0_server::serve()
 		else if (message == GET_LIVE)
 		{
 			int time_before=timer.elapsed_ms();
-			//stats_proto stats = {};
-			//char *name="dom0";
-			//stats_display();
-			//stats_display_proto(&stats, name);
-			Genode::Dataspace_capability xmlDsCap = _parser.live_data();
-			Genode::Region_map* rm = Genode::env()->rm_session();
-			char* xml = (char*)rm->attach(xmlDsCap);
-
-			size_t size = std::strlen(xml) + 1;
-			//PINF("Sending profile data of size %d", size);
-			lwip_write(_target_socket,&size,4);
-			lwip_write(_target_socket,(void*)xml,size);
-
-			rm->detach(xml);
+			_starter_thread.do_send_live(_target_socket);
 			PDBG("Done GET_LIVE. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == START)
@@ -197,30 +239,18 @@ void Dom0_server::Child_starter_thread::do_start(int target_socket)
 {
 	PDBG("Starting tasks.");
 	_task_loader.start();
-	std::string foo="1";
-	int32_t size=foo.size();
-	lwip_write(target_socket,&size,4);
-	lwip_write(target_socket,(void*)foo.c_str(),foo.size());
 }
 
 void Dom0_server::Child_starter_thread::do_stop(int target_socket)
 {
 	PDBG("Stopping tasks.");
 	_task_loader.stop();
-	std::string foo="1";
-	int32_t size=foo.size();
-	lwip_write(target_socket,&size,4);
-	lwip_write(target_socket,(void*)foo.c_str(),foo.size());
 }
 
 void Dom0_server::Child_starter_thread::do_clear(int target_socket)
 {
 	PDBG("Clearing tasks.");
 	_task_loader.clear_tasks();
-	std::string foo="1";
-	int32_t size=foo.size();
-	lwip_write(target_socket,&size,4);
-	lwip_write(target_socket,(void*)foo.c_str(),foo.size());
 }
 
 void Dom0_server::Child_starter_thread::do_send_descs(int target_socket)
@@ -229,18 +259,14 @@ void Dom0_server::Child_starter_thread::do_send_descs(int target_socket)
 
 	// Get XML size.
 	int xml_size;
-	lwip_read(target_socket, &xml_size, ntohl(4));
+	receiveInt32_t(xml_size, target_socket);
 	Genode::Attached_ram_dataspace xml_ds(Genode::env()->ram_session(), xml_size);
 	PINF("Ready to receive XML of size %d.", xml_size);
 
 	// Get XML file.
-	thread_receive_data(xml_ds.local_addr<char>(), xml_size,target_socket);
+	receive_data(xml_ds.local_addr<char>(), xml_size,target_socket);
 	PDBG("Received XML. Initializing tasks.");
 	_task_loader.add_tasks(xml_ds.cap());
-	std::string foo="1";
-	int32_t size=foo.size();
-	//lwip_write(target_socket,&size,4);
-	//lwip_write(target_socket,(void*)foo.c_str(),foo.size());
 }
 
 void Dom0_server::Child_starter_thread::do_send_binaries(int target_socket)
@@ -249,26 +275,25 @@ void Dom0_server::Child_starter_thread::do_send_binaries(int target_socket)
 
 	// Get number of binaries to receive.
 	int num_binaries = 0;
-	lwip_read(target_socket, &num_binaries, ntohl(4));
+	receiveInt32_t(num_binaries, target_socket);
 	PINF("%d binar%s to be sent.", num_binaries, num_binaries == 1 ? "y" : "ies");
 
 	// Receive binaries.
 	for (int i = 0; i < num_binaries; i++)
 	{
 		// Client is waiting for ready signal.
-		int32_t message=GO_SEND;
-		lwip_write(target_socket,&message,4);
+		sendInt32_t(GO_SEND, target_socket);
 		// Get binary name.
 		Genode::Attached_ram_dataspace name_ds(Genode::env()->ram_session(), 16);
-		thread_receive_data(name_ds.local_addr<char>(), 16, target_socket);
+		receive_data(name_ds.local_addr<char>(), 16, target_socket);
 		// Get binary size.
 		int32_t binary_size = 0;
-		lwip_read(target_socket, &binary_size, ntohl(4));
+		receiveInt32_t(binary_size, target_socket);
 		// Get binary data.
 		Genode::Dataspace_capability binDsCap = _task_loader.binary_ds(name_ds.cap(), binary_size);
 		Genode::Region_map* rm = Genode::env()->rm_session();
 		char* bin = (char*)rm->attach(binDsCap);
-		thread_receive_data(bin, binary_size, target_socket);
+		receive_data(bin, binary_size, target_socket);
 		PINF("Got binary '%s' of size %d.", name_ds.local_addr<char>(), binary_size);
 		rm->detach(bin);
 	}
@@ -281,31 +306,21 @@ void Dom0_server::Child_starter_thread::do_send_profile(int target_socket)
 	char* xml = (char*)rm->attach(xmlDsCap);
 	size_t size = std::strlen(xml) + 1;
 	PINF("Sending profile data of size %d", size);
-	lwip_write(target_socket,&size,4);
-	lwip_write(target_socket,xml,size);
+	sendInt32_t(size, target_socket);
+	send_data(xml, size, target_socket);
 	rm->detach(xml);
 }
 
-// Receive data from the socket and write it into data.
-ssize_t Dom0_server::Child_starter_thread::thread_receive_data(void* data, size_t size, int _target_socket)
+void Dom0_server::Child_starter_thread::do_send_live(int target_socket)
 {
-	ssize_t result = 0;
-	ssize_t position = 0;
-	// Because read() might actually read less than size bytes
-	// before it returns, we call it in a loop
-	// until size bytes have been read.
-	do
-	{
-		result = lwip_read(_target_socket, (char*) data + position, size - position);
-		if (result < 1)
-		{
-			return -errno;
-		}
-		position += result;
-
-	} while ((size_t) position < size);
-
-	return position;
+	Genode::Dataspace_capability xmlDsCap = _parser.live_data();
+	Genode::Region_map* rm = Genode::env()->rm_session();
+	char* xml = (char*)rm->attach(xmlDsCap);
+	size_t size = std::strlen(xml) + 1;
+	PINF("Sending live data of size %d", size);
+	sendInt32_t(size, target_socket);
+	send_data(xml, size, target_socket);
+	rm->detach(xml);
 }
 
 void Dom0_server::Child_starter_thread::entry()
@@ -314,6 +329,8 @@ void Dom0_server::Child_starter_thread::entry()
 	{
 	}
 }
+
+
 
 void Dom0_server::send_profile()
 {
