@@ -310,28 +310,25 @@ void Dom0_server::serve()
 			Genode::uint16_t ep_badge = _native_capability.signal_source_badge();
 
 			/* CPU Session */
-                        /* rtcr */
-                        Genode::List<Rtcr::Stored_cpu_session_info> _stored_cpu_sessions                = ts._stored_cpu_sessions;
-                        Rtcr::Stored_cpu_session_info cpu_session                                       = *_stored_cpu_sessions.first();
-                        Genode::uint16_t _cpu_session_sigh_badge                                        = cpu_session.sigh_badge;
-                        Genode::List<Rtcr::Stored_cpu_thread_info> stored_cpu_thread_infos              = cpu_session.stored_cpu_thread_infos;
-                        Rtcr::Stored_cpu_thread_info cpu_thread                                         = *stored_cpu_thread_infos.first();
-
                         /* protobuf */
                         protobuf::Stored_cpu_session_info _cpu_session                                  = _ts._stored_cpu_sessions(0);
                         protobuf::Stored_cpu_thread_info _cpu_thread                                    = _cpu_session.stored_cpu_thread_infos(0);
-			/* TODO object needed */
 			Genode::uint16_t cpu_session_sigh_badge                                         = _cpu_session.sigh_badge();
 			Genode::uint16_t pd_session_badge                                               = _cpu_thread.pd_session_badge();
                         //Genode::Cpu_session::Name name                                                  = _cpu_thread.name();
-                        //Genode::Cpu_session::Weight weight                                              = _cpu_thread.weight();
                         Genode::addr_t utcb                                                             = _cpu_thread.utcb();
                         bool started                                                                    = _cpu_thread.started();
                         bool paused                                                                     = _cpu_thread.paused();
                         bool single_step                                                                = _cpu_thread.single_step();
                         Genode::Affinity::Location affinity(_cpu_thread.affinity(),0);
                         Genode::uint16_t cpu_thread_sigh_badge                                          = _cpu_thread.sigh_badge();
-                        //Genode::Thread_state target_state						= _cpu_thread.ts();
+			/* rtcr */
+                        Genode::List<Rtcr::Stored_cpu_session_info> _stored_cpu_sessions                = ts._stored_cpu_sessions;
+			Rtcr::Stored_cpu_session_info cpu_session					= Rtcr::Stored_cpu_session_info(cpu_session_sigh_badge);
+			Genode::List<Rtcr::Stored_cpu_thread_info> stored_cpu_thread_infos              = cpu_session.stored_cpu_thread_infos;
+			Rtcr::Stored_cpu_thread_info cpu_thread						= Rtcr::Stored_cpu_thread_info(pd_session_badge, "", Genode::Cpu_session::Weight(), utcb, started, paused, single_step, affinity, cpu_thread_sigh_badge);
+			stored_cpu_thread_infos.insert(&cpu_thread);
+			_stored_cpu_sessions.insert(&cpu_session);
 			
 			 /* RAM Session */
                         /* rtcr */
