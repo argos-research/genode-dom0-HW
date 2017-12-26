@@ -13,6 +13,11 @@
 #include <timer_session/connection.h>
 #include <os/config.h>
 
+/* Fiasco includes */
+namespace Fiasco {
+#include <l4/sys/kdebug.h>
+}
+
 Dom0_server::Dom0_server() :
 	_listen_socket(0),
 	_in_addr{0},
@@ -217,6 +222,11 @@ void Dom0_server::serve()
 
 			rm->detach(xml);
 			PDBG("Done.");
+		}
+		else if(message == REBOOT)
+		{
+			using namespace Fiasco;
+                	enter_kdebug("*#^");
 		}
 		else
 		{
