@@ -143,11 +143,16 @@ void Dom0_server::serve()
 			/* rtcr */
 			Genode::List<Rtcr::Stored_pd_session_info> _stored_pd_sessions 			= ts._stored_pd_sessions;
 			Rtcr::Stored_pd_session_info pd_session 					= *_stored_pd_sessions.first();
+			Genode::String<160> pd_creation_args						= pd_session.creation_args;
+        		Genode::String<160> pd_upgrade_args						= pd_session.upgrade_args;
+			Genode::addr_t   pd_kcap							= pd_session.kcap;
+        		Genode::uint16_t pd_badge							= pd_session.badge;
+        		bool             pd_bootstrapped						= pd_session.bootstrapped;
 			Genode::List<Rtcr::Stored_signal_context_info> stored_context_infos 		= pd_session.stored_context_infos;
-			//Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos 		= pd_session.stored_source_infos;
+			Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos 		= pd_session.stored_source_infos;
 			Genode::List<Rtcr::Stored_native_capability_info> stored_native_cap_infos 	= pd_session.stored_native_cap_infos;
 			Rtcr::Stored_signal_context_info context 					= *stored_context_infos.first();
-			//Rtcr::Stored_signal_source_info source 					= *stored_source_infos.first();
+			Rtcr::Stored_signal_source_info source 						= *stored_source_infos.first();
 			Rtcr::Stored_native_capability_info native_capability 				= *stored_native_cap_infos.first();
 			Genode::uint16_t signal_source_badge 						= context.signal_source_badge;
 			unsigned long imprint 								= context.imprint;
@@ -155,17 +160,29 @@ void Dom0_server::serve()
 			/* protobuf */
 			protobuf::Stored_pd_session_info _pd 						= _ts._stored_pd_sessions(0);
 			protobuf::Stored_signal_context_info _context					= _pd.stored_context_infos(0);
-			//protobuf::Stored_signal_source_info _source 					= _pd.stored_source_infos(0);
+			protobuf::Stored_signal_source_info _source 					= _pd.stored_source_infos(0);
 			protobuf::Stored_native_capability_info _native_capability 			= _pd.stored_native_cap_infos(0);
+			protobuf::Session_info _pd_session_info						= _pd.session_info();
+			protobuf::Stored_general_info _pd_general_info					= _pd_session_info.general_info();
 			_context.set_signal_source_badge(signal_source_badge);
 			_context.set_imprint(imprint);
 			_native_capability.set_signal_source_badge(ep_badge);
+			_pd_session_info.set_creation_args(pd_creation_args.string());
+			_pd_session_info.set_upgrade_args(pd_upgrade_args.string());
+			_pd_general_info.set_kcap(pd_kcap);
+			_pd_general_info.set_badge(pd_badge);
+			_pd_general_info.set_bootstrapped(pd_bootstrapped);
 			
 			/* CPU Session */
 			/* rtcr */
 			Genode::List<Rtcr::Stored_cpu_session_info> _stored_cpu_sessions 		= ts._stored_cpu_sessions;
 			Rtcr::Stored_cpu_session_info cpu_session 					= *_stored_cpu_sessions.first();
 			Genode::uint16_t cpu_session_sigh_badge						= cpu_session.sigh_badge;
+			Genode::String<160> cpu_creation_args                                            = cpu_session.creation_args;
+                        Genode::String<160> cpu_upgrade_args                                             = cpu_session.upgrade_args;
+                        Genode::addr_t   cpu_kcap                                                        = cpu_session.kcap;
+                        Genode::uint16_t cpu_badge                                                       = cpu_session.badge;
+                        bool             cpu_bootstrapped                                                = cpu_session.bootstrapped;
 			Genode::List<Rtcr::Stored_cpu_thread_info> stored_cpu_thread_infos		= cpu_session.stored_cpu_thread_infos;
 			Rtcr::Stored_cpu_thread_info cpu_thread						= *stored_cpu_thread_infos.first();
 			Genode::uint16_t pd_session_badge						= cpu_thread.pd_session_badge;
@@ -197,6 +214,11 @@ void Dom0_server::serve()
 			/* rtcr */
 			Genode::List<Rtcr::Stored_ram_session_info> _stored_ram_sessions 		= ts._stored_ram_sessions;
 			Rtcr::Stored_ram_session_info ram_session					= *_stored_ram_sessions.first();
+			Genode::String<160> ram_creation_args                                            = ram_session.creation_args;
+                        Genode::String<160> ram_upgrade_args                                             = ram_session.upgrade_args;
+                        Genode::addr_t   ram_kcap                                                        = ram_session.kcap;
+                        Genode::uint16_t ram_badge                                                       = ram_session.badge;
+                        bool             ram_bootstrapped                                                = ram_session.bootstrapped;
 			Genode::List<Rtcr::Stored_ram_dataspace_info> stored_ramds_infos		= ram_session.stored_ramds_infos;
 			Rtcr::Stored_ram_dataspace_info ramds						= *stored_ramds_infos.first();
 			Genode::Ram_dataspace_capability ram_memory_content				= ramds.memory_content;
@@ -221,6 +243,11 @@ void Dom0_server::serve()
 			/* rtcr */
 			Genode::List<Rtcr::Stored_rom_session_info> _stored_rom_sessions 		= ts._stored_rom_sessions;
 			Rtcr::Stored_rom_session_info rom_session					= *_stored_rom_sessions.first();
+			Genode::String<160> rom_creation_args                                            = rom_session.creation_args;
+                        Genode::String<160> rom_upgrade_args                                             = rom_session.upgrade_args;
+                        Genode::addr_t   rom_kcap                                                        = rom_session.kcap;
+                        Genode::uint16_t rom_badge                                                       = rom_session.badge;
+                        bool             rom_bootstrapped                                                = rom_session.bootstrapped;
 			Genode::uint16_t dataspace_badge						= rom_session.dataspace_badge;
 			Genode::uint16_t rom_sigh_badge							= rom_session.sigh_badge;
 			/* protobuf */
@@ -232,6 +259,11 @@ void Dom0_server::serve()
 			/* rtcr */
 			Genode::List<Rtcr::Stored_rm_session_info> _stored_rm_sessions 			= ts._stored_rm_sessions;
 			Rtcr::Stored_rm_session_info rm_session						= *_stored_rm_sessions.first();
+			Genode::String<160> rm_creation_args                                            = rm_session.creation_args;
+                        Genode::String<160> rm_upgrade_args                                             = rm_session.upgrade_args;
+                        Genode::addr_t   rm_kcap                                                        = rm_session.kcap;
+                        Genode::uint16_t rm_badge                                                       = rm_session.badge;
+                        bool             rm_bootstrapped                                                = rm_session.bootstrapped;
 			Genode::List<Rtcr::Stored_region_map_info> _stored_region_map_infos		= rm_session.stored_region_map_infos;
 			Rtcr::Stored_region_map_info region_map						= *_stored_region_map_infos.first();
 			Genode::size_t   rm_size							= region_map.size;
@@ -273,6 +305,11 @@ void Dom0_server::serve()
 			/* rtcr */
 			Genode::List<Rtcr::Stored_timer_session_info> _stored_timer_sessions 		= ts._stored_timer_sessions;
 			Rtcr::Stored_timer_session_info timer_session					= *_stored_timer_sessions.first();
+			Genode::String<160> timer_creation_args                                            = timer_session.creation_args;
+                        Genode::String<160> timer_upgrade_args                                             = timer_session.upgrade_args;
+                        Genode::addr_t   timer_kcap                                                        = timer_session.kcap;
+                        Genode::uint16_t timer_badge                                                       = timer_session.badge;
+                        bool             timer_bootstrapped                                                = timer_session.bootstrapped;
 			Genode::uint16_t timer_sigh_badge						= timer_session.sigh_badge;
 			unsigned         timeout							= timer_session.timeout;
 			bool             periodic							= timer_session.periodic;
@@ -292,21 +329,31 @@ void Dom0_server::serve()
 			/* PD Session *
 			/* protobuf */
 			protobuf::Stored_pd_session_info _pd 						= _ts._stored_pd_sessions(0);
+			protobuf::Stored_session_info __pd_session_info					= _pd.session_info();
+			protobuf::Stored_general_info __pd_general_info					= __pd_session_info.general_info();
 			protobuf::Stored_signal_context_info _context					= _pd.stored_context_infos(0);
-			//protobuf::Stored_signal_source_info _source 					= _pd.stored_source_infos(0);
+			protobuf::Stored_signal_source_info _source 					= _pd.stored_source_infos(0);
 			protobuf::Stored_native_capability_info _native_capability 			= _pd.stored_native_cap_infos(0);
 			/* TODO object needed */
+			const char* creation_args							= __pd_session_info.creation_args().c_str();
+                        const char* upgrade_args							= __pd_session_info.upgrade_args().c_str();
+                        Genode::addr_t kcap								= __pd_general_info.kcap();
+                        Genode::uint16_t local_name							= __pd_general_info.badge();
+                        bool bootstrapped								= __pd_general_info.bootstrapped();
+			Stored_region_map_info _pd_stored_address_space					= _pd.stored_address_space();
+        		Stored_region_map_info _pd_stored_stack_area					= _pd.stored_stack_area();
+        		Stored_region_map_info _pd_stored_linker_area					= _pd.stored_linker_area();
 			Genode::uint16_t signal_source_badge = _context.signal_source_badge();
 			unsigned long imprint = _context.imprint();
 			Genode::uint16_t ep_badge = _native_capability.signal_source_badge();
 			/* rtcr */
 			Genode::List<Rtcr::Stored_pd_session_info> _stored_pd_sessions 			= ts._stored_pd_sessions;
-			Rtcr::Stored_pd_session_info pd_session 					= Rtcr::Stored_pd_session_info(stored_context_infos, stored_source_infos, stored_native_cap_infos, stored_address_space, stored_stack_area, stored_linker_area);
+			Rtcr::Stored_pd_session_info pd_session 					= Rtcr::Stored_pd_session_info(creation_args, upgrade_args, kcap, local_name, bootstrapped, _pd_stored_address_space, _pd_stored_stack_area, _pd_stored_linker_area);
 			Genode::List<Rtcr::Stored_signal_context_info> stored_context_infos 		= pd_session.stored_context_infos;
-			//Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos 		= pd_session.stored_source_infos;
+			Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos 		= pd_session.stored_source_infos;
 			Genode::List<Rtcr::Stored_native_capability_info> stored_native_cap_infos 	= pd_session.stored_native_cap_infos;
 			Rtcr::Stored_signal_context_info context 					= Rtcr::Stored_signal_context_info(signal_source_badge, imprint);
-			//Rtcr::Stored_signal_source_info source 					= *stored_source_infos.first();
+			Rtcr::Stored_signal_source_info source 						= *stored_source_infos.first();
 			Rtcr::Stored_native_capability_info native_capability 				= Rtcr::Stored_native_capability_info(ep_badge);
 
 			/* CPU Session */
