@@ -208,7 +208,15 @@ void Dom0_server::serve()
 			/* protobuf */
 			protobuf::Stored_cpu_session_info* _cpu_session 				= _ts.add__stored_cpu_sessions();
 			_cpu_session->set_sigh_badge(cpu_session_sigh_badge);
-			
+			protobuf::Stored_session_info _cpu_session_info                                  = protobuf::Stored_session_info();
+                        protobuf::Stored_general_info _cpu_general_info                                  = protobuf::Stored_general_info();
+			_cpu_general_info.set_kcap(cpu_kcap);
+                        _cpu_general_info.set_badge(cpu_badge);
+                        _cpu_general_info.set_bootstrapped(cpu_bootstrapped);
+                        _cpu_session_info.set_creation_args(cpu_creation_args.string());
+                        _cpu_session_info.set_upgrade_args(cpu_upgrade_args.string());
+                        _cpu_session_info.set_allocated_general_info(&_cpu_general_info);
+			_cpu_session->set_allocated_session_info(&_cpu_session_info);
 			protobuf::Stored_cpu_thread_info* _cpu_thread                                   = _cpu_session->add_stored_cpu_thread_infos();
 			_cpu_thread->set_pd_session_badge(pd_session_badge);
 			_cpu_thread->set_name(name.string());
@@ -245,6 +253,15 @@ void Dom0_server::serve()
 			Genode::size_t timestamp							= ramds.timestamp;
 			/* protobuf */
 			protobuf::Stored_ram_session_info* _ram_session					= _ts.add__stored_ram_sessions();
+			protobuf::Stored_session_info _ram_session_info                                 = protobuf::Stored_session_info();
+                        protobuf::Stored_general_info _ram_general_info                                 = protobuf::Stored_general_info();
+                        _ram_general_info.set_kcap(ram_kcap);
+                        _ram_general_info.set_badge(ram_badge);
+                        _ram_general_info.set_bootstrapped(ram_bootstrapped);
+                        _ram_session_info.set_creation_args(ram_creation_args.string());
+                        _ram_session_info.set_upgrade_args(ram_upgrade_args.string());
+                        _ram_session_info.set_allocated_general_info(&_ram_general_info);
+                        _ram_session->set_allocated_session_info(&_ram_session_info);
 			protobuf::Stored_ram_dataspace_info* _ramds					= _ram_session->add_stored_ramds_infos();
 			_ramds->set_size(ram_size);
 			_ramds->set_cached(cached);
@@ -266,6 +283,15 @@ void Dom0_server::serve()
 			Genode::uint16_t rom_sigh_badge							= rom_session.sigh_badge;
 			/* protobuf */
 			protobuf::Stored_rom_session_info* _rom_session					= _ts.add__stored_rom_sessions();
+			protobuf::Stored_session_info _rom_session_info                                  = protobuf::Stored_session_info();
+                        protobuf::Stored_general_info _rom_general_info                                  = protobuf::Stored_general_info();
+                        _rom_general_info.set_kcap(rom_kcap);
+                        _rom_general_info.set_badge(rom_badge);
+                        _rom_general_info.set_bootstrapped(rom_bootstrapped);
+                        _rom_session_info.set_creation_args(rom_creation_args.string());
+                        _rom_session_info.set_upgrade_args(rom_upgrade_args.string());
+                        _rom_session_info.set_allocated_general_info(&_rom_general_info);
+                        _rom_session->set_allocated_session_info(&_rom_session_info);
 			_rom_session->set_dataspace_badge(dataspace_badge);
 			_rom_session->set_sigh_badge(rom_sigh_badge);
 			}
@@ -304,6 +330,15 @@ void Dom0_server::serve()
 			bool executable									= attached_region.executable;
 			/* protobuf */
 			protobuf::Stored_rm_session_info* _rm_session					= _ts.add__stored_rm_sessions();
+			protobuf::Stored_session_info _rm_session_info                                  = protobuf::Stored_session_info();
+                        protobuf::Stored_general_info _rm_general_info                                  = protobuf::Stored_general_info();
+                        _rm_general_info.set_kcap(rm_kcap);
+                        _rm_general_info.set_badge(rm_badge);
+                        _rm_general_info.set_bootstrapped(rm_bootstrapped);
+                        _rm_session_info.set_creation_args(rm_creation_args.string());
+                        _rm_session_info.set_upgrade_args(rm_upgrade_args.string());
+                        _rm_session_info.set_allocated_general_info(&_rm_general_info);
+                        _rm_session->set_allocated_session_info(&_rm_session_info);
 			protobuf::Stored_region_map_info* _region_map_infos				= _rm_session->add_stored_region_map_infos();
 			protobuf::Stored_attached_region_info* _attached_region_infos			= _region_map_infos->add_stored_attached_region_infos();
 			_region_map_infos->set_size(rm_size);
@@ -336,6 +371,15 @@ void Dom0_server::serve()
 			bool             periodic							= timer_session.periodic;
 			/* protobuf */
 			protobuf::Stored_timer_session_info* _timer_session				= _ts.add__stored_timer_sessions();
+			protobuf::Stored_session_info _timer_session_info                                  = protobuf::Stored_session_info();
+                        protobuf::Stored_general_info _timer_general_info                                  = protobuf::Stored_general_info();
+                        _timer_general_info.set_kcap(timer_kcap);
+                        _timer_general_info.set_badge(timer_badge);
+                        _timer_general_info.set_bootstrapped(timer_bootstrapped);
+                        _timer_session_info.set_creation_args(timer_creation_args.string());
+                        _timer_session_info.set_upgrade_args(timer_upgrade_args.string());
+                        _timer_session_info.set_allocated_general_info(&_timer_general_info);
+                        _timer_session->set_allocated_session_info(&_timer_session_info);
 			_timer_session->set_sigh_badge(timer_sigh_badge);
 			_timer_session->set_timeout(timeout);
 			_timer_session->set_periodic(periodic);
