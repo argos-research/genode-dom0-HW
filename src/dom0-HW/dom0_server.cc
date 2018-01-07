@@ -158,8 +158,20 @@ void Dom0_server::serve()
 			Genode::List<Rtcr::Stored_native_capability_info> stored_native_cap_infos 	= pd_session.stored_native_cap_infos;
 			
 			Rtcr::Stored_signal_context_info context 					= *stored_context_infos.first();
+			Genode::addr_t   context_kcap							= context.kcap;
+        		Genode::uint16_t context_badge							= context.badge;
+        		bool             context_bootstrapped						= context.bootstrapped;
+			
 			Rtcr::Stored_signal_source_info source 						= *stored_source_infos.first();
+                        Genode::addr_t   source_kcap                                                    = source.kcap;
+                        Genode::uint16_t source_badge                                                   = source.badge;
+                        bool             source_bootstrapped                                            = source.bootstrapped;
+
 			Rtcr::Stored_native_capability_info native_capability 				= *stored_native_cap_infos.first();
+                        Genode::addr_t   cap_kcap                                                       = native_capability.kcap;
+                        Genode::uint16_t cap_badge                                                      = native_capability.badge;
+                        bool             cap_bootstrapped                                               = native_capability.bootstrapped;
+
 			Genode::uint16_t signal_source_badge 						= context.signal_source_badge;
 			unsigned long imprint 								= context.imprint;
 			Genode::uint16_t ep_badge 							= native_capability.ep_badge;
@@ -167,11 +179,10 @@ void Dom0_server::serve()
 			protobuf::Stored_pd_session_info* _pd 						= _ts.add__stored_pd_sessions();
 			protobuf::Stored_signal_context_info* _context					= _pd->add_stored_context_infos();
 			protobuf::Stored_signal_source_info* _source 					= _pd->add_stored_source_infos();
-			protobuf::Stored_native_capability_info* _native_capability 			= _pd->add_stored_native_cap_infos();
+			protobuf::Stored_native_capability_info* cap 					= _pd->add_stored_native_cap_infos();
 			protobuf::Stored_session_info _pd_session_info					= protobuf::Stored_session_info();
 			protobuf::Stored_general_info _pd_general_info					= protobuf::Stored_general_info();
-			_context->set_signal_source_badge(signal_source_badge);
-			_context->set_imprint(imprint);
+
 			_pd_general_info.set_kcap(pd_kcap);
 			_pd_general_info.set_badge(pd_badge);
 			_pd_general_info.set_bootstrapped(pd_bootstrapped);
@@ -179,7 +190,34 @@ void Dom0_server::serve()
                         _pd_session_info.set_upgrade_args(pd_upgrade_args.string());
 			_pd_session_info.set_allocated_general_info(&_pd_general_info);
 			_pd->set_allocated_session_info(&_pd_session_info);
-			_native_capability->set_signal_source_badge(ep_badge);
+
+			protobuf::Stored_normal_info _context_normal_info                                  = protobuf::Stored_normal_info();
+                        protobuf::Stored_general_info _context_general_info                                  = protobuf::Stored_general_info();
+			_context->set_signal_source_badge(signal_source_badge);
+                        _context->set_imprint(imprint);
+			_context_general_info.set_kcap(context_kcap);
+			_context_general_info.set_badge(context_badge);
+			_context_general_info.set_bootstrapped(context_bootstrapped);
+			_context_normal_info.set_allocated_general_info(&_context_general_info);
+			_context->set_allocated_normal_info(&_context_normal_info);
+
+			protobuf::Stored_normal_info _source_normal_info                                  = protobuf::Stored_normal_info();
+                        protobuf::Stored_general_info _source_general_info                                  = protobuf::Stored_general_info();
+			_source_general_info.set_kcap(source_kcap);
+                        _source_general_info.set_badge(source_badge);
+                        _source_general_info.set_bootstrapped(source_bootstrapped);
+                        _source_normal_info.set_allocated_general_info(&_source_general_info);
+                        _source->set_allocated_normal_info(&_source_normal_info);
+
+			protobuf::Stored_normal_info cap_normal_info                                  = protobuf::Stored_normal_info();
+                        protobuf::Stored_general_info cap_general_info                                  = protobuf::Stored_general_info();
+			cap->set_signal_source_badge(ep_badge);
+			cap_general_info.set_kcap(cap_kcap);
+                        cap_general_info.set_badge(cap_badge);
+                        cap_general_info.set_bootstrapped(cap_bootstrapped);
+                        cap_normal_info.set_allocated_general_info(&cap_general_info);
+                        cap->set_allocated_normal_info(&cap_normal_info);
+
 			PDBG("pd protofiles completed");
 
 			/* CPU Session */
@@ -397,7 +435,8 @@ void Dom0_server::serve()
                         lwip_write(_target_socket,&m_length,4);
 			PDBG("Length written");
                         /* Send serialized String to SD2 */
-                        lwip_write(_target_socket,(void*)foo.c_str(),foo.size());
+                        NETCHECK_LOOP(send_data((void*)foo.c_str(), m_length));
+			//lwip_write(_target_socket,(void*)foo.c_str(),foo.size());
 			PDBG("Done checkpoint");
 		}
 		else if (message == RESTORE)
@@ -414,7 +453,7 @@ void Dom0_server::serve()
 			protobuf::Stored_general_info __pd_general_info					= __pd_session_info.general_info();
 			protobuf::Stored_signal_context_info _context					= _pd.stored_context_infos(0);
 			protobuf::Stored_signal_source_info _source 					= _pd.stored_source_infos(0);
-			protobuf::Stored_native_capability_info _native_capability 			= _pd.stored_native_cap_infos(0);
+			protobuf::Stored_native_capability_info cap 			= _pd.stored_native_cap_infos(0);
 			/* TODO object needed */
 			const char* __pd_creation_args							= __pd_session_info.creation_args().c_str();
                         const char* __pd_upgrade_args							= __pd_session_info.upgrade_args().c_str();
@@ -450,7 +489,7 @@ void Dom0_server::serve()
                         Genode::uint16_t __pd_stored_linker_area_sigh_badge                           = __pd_stored_linker_area.sigh_badge();
 			Genode::uint16_t signal_source_badge = _context.signal_source_badge();
 			unsigned long imprint = _context.imprint();
-			Genode::uint16_t ep_badge = _native_capability.signal_source_badge();
+			Genode::uint16_t ep_badge = cap.signal_source_badge();
 			/* rtcr */
 			Rtcr::Stored_region_map_info _pd_stored_address_space				= Rtcr::Stored_region_map_info(__pd_stored_address_space_kcap, __pd_stored_address_space_local_name, __pd_stored_address_space_bootstrapped, __pd_stored_address_space_size, __pd_stored_address_space_ds_badge, __pd_stored_address_space_sigh_badge);
 			Rtcr::Stored_region_map_info _pd_stored_stack_area                              = Rtcr::Stored_region_map_info(__pd_stored_stack_kcap, __pd_stored_stack_local_name, __pd_stored_stack_bootstrapped, __pd_stored_stack_size, __pd_stored_stack_area_ds_badge, __pd_stored_stack_area_sigh_badge);
