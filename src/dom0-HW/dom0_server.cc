@@ -243,6 +243,9 @@ void Dom0_server::serve()
 			Genode::Affinity::Location affinity						= cpu_thread.affinity;
 			Genode::uint16_t cpu_thread_sigh_badge						= cpu_thread.sigh_badge;
 			Genode::Thread_state target_state						= cpu_thread.ts;
+			Genode::addr_t   thread_kcap                                                    = cpu_thread.kcap;
+                        Genode::uint16_t thread_badge                                                   = cpu_thread.badge;
+                        bool             thread_bootstrapped                                            = cpu_thread.bootstrapped;
 			/* protobuf */
 			protobuf::Stored_cpu_session_info* _cpu_session 				= _ts.add__stored_cpu_sessions();
 			_cpu_session->set_sigh_badge(cpu_session_sigh_badge);
@@ -256,6 +259,13 @@ void Dom0_server::serve()
                         _cpu_session_info.set_allocated_general_info(&_cpu_general_info);
 			_cpu_session->set_allocated_session_info(&_cpu_session_info);
 			protobuf::Stored_cpu_thread_info* _cpu_thread                                   = _cpu_session->add_stored_cpu_thread_infos();
+			protobuf::Stored_normal_info _cpu_thread_normal_info                                  = protobuf::Stored_normal_info();
+                        protobuf::Stored_general_info _cpu_thread_general_info                                  = protobuf::Stored_general_info();
+                        _cpu_thread_general_info.set_kcap(thread_kcap);
+                        _cpu_thread_general_info.set_badge(thread_badge);
+                        _cpu_thread_general_info.set_bootstrapped(thread_bootstrapped);
+                        _cpu_thread_normal_info.set_allocated_general_info(&_cpu_thread_general_info);
+                        _cpu_thread->set_allocated_normal_info(&_cpu_thread_normal_info);
 			_cpu_thread->set_pd_session_badge(pd_session_badge);
 			_cpu_thread->set_name(name.string());
 			_cpu_thread->set_weight(std::to_string(weight.value).c_str());
