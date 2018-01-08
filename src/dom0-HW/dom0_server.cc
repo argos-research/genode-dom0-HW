@@ -454,10 +454,11 @@ void Dom0_server::serve()
 			Genode::Heap              heap            { _env.ram(), _env.rm() };
 			Genode::Service_registry  parent_services { };
 			Rtcr::Target_state ts(_env, heap);
-			protobuf::Target_state _ts;
+			protobuf::Target_state _ts = protobuf::Target_state();
 	
 			/* PD Session *
 			/* protobuf */
+			if(_ts._stored_pd_sessions_size()>0){
 			protobuf::Stored_pd_session_info _pd 						= _ts._stored_pd_sessions(0);
 			protobuf::Stored_session_info __pd_session_info					= _pd.session_info();
 			protobuf::Stored_general_info __pd_general_info					= __pd_session_info.general_info();
@@ -538,9 +539,11 @@ void Dom0_server::serve()
 			_stored_source_infos.insert(&stored_signal_source);
 			_stored_native_cap_infos.insert(&stored_cap);
 			_stored_pd_sessions.insert(&pd_session);
+			}
 
 			/* CPU Session */
                         /* protobuf */
+			if(_ts._stored_cpu_sessions_size()>0) {
                         protobuf::Stored_cpu_session_info _cpu_session                                  = _ts._stored_cpu_sessions(0);
 			protobuf::Stored_session_info __cpu_session_info         			= _cpu_session.session_info();
                         protobuf::Stored_general_info __cpu_session_general_info                        = __cpu_session_info.general_info();
@@ -572,9 +575,11 @@ void Dom0_server::serve()
 			Rtcr::Stored_cpu_thread_info cpu_thread						= Rtcr::Stored_cpu_thread_info(__cpu_kcap, __cpu_local_name, __cpu_bootstrapped, pd_session_badge, "", Genode::Cpu_session::Weight(), utcb, started, paused, single_step, affinity, cpu_thread_sigh_badge);
 			stored_cpu_thread_infos.insert(&cpu_thread);
 			_stored_cpu_sessions.insert(&cpu_session);
-			
+			}
+
 			 /* RAM Session */
                         /* protobuf */
+			if(_ts._stored_ram_sessions_size()>0) {
                         protobuf::Stored_ram_session_info _ram_session                                  = _ts._stored_ram_sessions(0);
                         protobuf::Stored_ram_dataspace_info _ramds                                      = _ram_session.stored_ramds_infos(0);
 			protobuf::Stored_session_info __ram_session_info                                = _ram_session.session_info();
@@ -594,7 +599,7 @@ void Dom0_server::serve()
 			Genode::size_t ram_size                                                         = _ramds.size();
 			Genode::Ram_dataspace_capability _ram_memory_content                            = Genode::env()->ram_session()->alloc(ram_size);
 			char* _ram_content								= (char*)Genode::env()->rm_session()->attach(_ram_memory_content);
-			lwip_read(_target_socket, _ram_content ,ntohl(ram_size));
+			//lwip_read(_target_socket, _ram_content ,ntohl(ram_size));
                         Genode::Cache_attribute cached                                                  = Genode::CACHED;//_ramds.cached();
                         bool managed                                                                    = _ramds.managed();
                         Genode::size_t timestamp							= _ramds.timestamp();
@@ -605,9 +610,11 @@ void Dom0_server::serve()
                         Rtcr::Stored_ram_dataspace_info ramds                                           = Rtcr::Stored_ram_dataspace_info(__ramds_kcap, __ramds_local_name, __ramds_bootstrapped, _ram_memory_content, ram_size, cached, managed, timestamp);
 			stored_ramds_infos.insert(&ramds);
 			_stored_ram_sessions.insert(&ram_session);
+			}
 
                         /* ROM Session */
                         /* protobuf */
+			if(_ts._stored_rom_sessions_size()>0) {
                         protobuf::Stored_rom_session_info _rom_session                                  = _ts._stored_rom_sessions(0);
 			protobuf::Stored_session_info __rom_session_info                                = _rom_session.session_info();
                         protobuf::Stored_general_info __rom_general_info                                = __rom_session_info.general_info();
@@ -622,9 +629,11 @@ void Dom0_server::serve()
                         Genode::List<Rtcr::Stored_rom_session_info> _stored_rom_sessions                = ts._stored_rom_sessions;
                         Rtcr::Stored_rom_session_info rom_session                                       = Rtcr::Stored_rom_session_info(__rom_creation_args, __rom_upgrade_args, __rom_kcap, __rom_local_name, __rom_bootstrapped ,dataspace_badge, rom_sigh_badge);
 			_stored_rom_sessions.insert(&rom_session);
+			}
 
                         /* RM Session */
                         /* protobuf */
+			if(_ts._stored_rm_sessions_size()>0) {
                         protobuf::Stored_rm_session_info _rm_session                                    = _ts._stored_rm_sessions(0);
                         protobuf::Stored_region_map_info _region_map                              	= _rm_session.stored_region_map_infos(0);
 			protobuf::Stored_session_info __rm_session_info                                 = _rm_session.session_info();
@@ -655,7 +664,7 @@ void Dom0_server::serve()
                         Genode::size_t attached_rm_size                                                 = _attached_region.size();
 			Genode::Ram_dataspace_capability _rm_memory_content                             = Genode::env()->ram_session()->alloc(attached_rm_size);
 			char* _rm_content								= (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
-			lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+			//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
                         
                         Genode::off_t offset                                                            = _attached_region.offset();
                         Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
@@ -670,6 +679,7 @@ void Dom0_server::serve()
 			_stored_attached_region_infos.insert(&attached_region);
 			_stored_region_map_infos.insert(&region_map);
 			_stored_rm_sessions.insert(&rm_session);
+			}
 
                         /* LOG Session */
                         /* rtcr */
@@ -678,6 +688,7 @@ void Dom0_server::serve()
 
                         /* Timer Session */
                         /* protobuf */
+			if(_ts._stored_timer_sessions_size()>0) {
                         protobuf::Stored_timer_session_info _timer_session                              = _ts._stored_timer_sessions(0);
 			protobuf::Stored_session_info __timer_session_info                              = _timer_session.session_info();
                         protobuf::Stored_general_info __timer_general_info                              = __timer_session_info.general_info();
@@ -694,6 +705,7 @@ void Dom0_server::serve()
                         Genode::List<Rtcr::Stored_timer_session_info> _stored_timer_sessions            = ts._stored_timer_sessions;
                         Rtcr::Stored_timer_session_info timer_session                                   = Rtcr::Stored_timer_session_info(__timer_creation_args, __timer_upgrade_args, __timer_kcap, __timer_local_name, __timer_bootstrapped, timer_sigh_badge, timeout, periodic);
 			_stored_timer_sessions.insert(&timer_session);
+			}
 
 			Rtcr::Target_child child_restored { _env, heap, parent_services, "sheep_counter", 0 };
 			Rtcr::Restorer resto(heap, child_restored, ts);
