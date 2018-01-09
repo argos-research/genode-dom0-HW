@@ -271,62 +271,87 @@ void Dom0_server::serve()
 			PDBG("pd protofiles completed");
 
 			/* CPU Session */
+			protobuf::Stored_cpu_session_info* _cpu_session[10];
+			int _cpu_counter=0;
+			protobuf::Stored_cpu_thread_info* _cpu_thread[10];
+			int _cpu_thread_counter=0;
+			protobuf::Stored_session_info _cpu_session_info[10];
+			int _cpu_session_info_counter=0;
+			protobuf::Stored_normal_info _cpu_normal_info[10];
+			int _cpu_normal_info_counter=0;
+			protobuf::Stored_general_info _cpu_general_info[10];
+			int _cpu_general_info_counter=0;
 			/* rtcr */
 			Genode::List<Rtcr::Stored_cpu_session_info> _stored_cpu_sessions 		= ts._stored_cpu_sessions;
-			Rtcr::Stored_cpu_session_info cpu_session 					= *_stored_cpu_sessions.first();
-			Genode::uint16_t cpu_session_sigh_badge						= cpu_session.sigh_badge;
-			Genode::String<160> cpu_creation_args                                            = cpu_session.creation_args;
-                        Genode::String<160> cpu_upgrade_args                                             = cpu_session.upgrade_args;
-                        Genode::addr_t   cpu_kcap                                                        = cpu_session.kcap;
-                        Genode::uint16_t cpu_badge                                                       = cpu_session.badge;
-                        bool             cpu_bootstrapped                                                = cpu_session.bootstrapped;
+			Rtcr::Stored_cpu_session_info* cpu_session 					= _stored_cpu_sessions.first();
+			while(cpu_session) {
+			Genode::uint16_t cpu_session_sigh_badge						= cpu_session->sigh_badge;
+			Genode::String<160> cpu_creation_args                                           = cpu_session->creation_args;
+                        Genode::String<160> cpu_upgrade_args                                            = cpu_session->upgrade_args;
+                        Genode::addr_t   cpu_kcap                                                       = cpu_session->kcap;
+                        Genode::uint16_t cpu_badge                                                      = cpu_session->badge;
+                        bool             cpu_bootstrapped                                               = cpu_session->bootstrapped;
+
+			_cpu_session[_cpu_counter] 							= _ts.add__stored_cpu_sessions();
+			_cpu_session_info[_cpu_session_info_counter]                                  	= protobuf::Stored_session_info();
+                       	_cpu_general_info[_cpu_general_info_counter]                                  	= protobuf::Stored_general_info();
+			_cpu_session[_cpu_counter]->set_sigh_badge(cpu_session_sigh_badge);
+			_cpu_general_info[_cpu_general_info_counter].set_kcap(cpu_kcap);
+                        _cpu_general_info[_cpu_general_info_counter].set_badge(cpu_badge);
+                        _cpu_general_info[_cpu_general_info_counter].set_bootstrapped(cpu_bootstrapped);
+                        _cpu_session_info[_cpu_session_info_counter].set_creation_args(cpu_creation_args.string());
+                        _cpu_session_info[_cpu_session_info_counter].set_upgrade_args(cpu_upgrade_args.string());
+                        _cpu_session_info[_cpu_session_info_counter].set_allocated_general_info(&_cpu_general_info[_cpu_general_info_counter]);
+			_cpu_session[_cpu_counter]->set_allocated_session_info(&_cpu_session_info[_cpu_session_info_counter]);
+
+			_cpu_session_info_counter++;
+			_cpu_general_info_counter++;
 			
-			Genode::List<Rtcr::Stored_cpu_thread_info> stored_cpu_thread_infos		= cpu_session.stored_cpu_thread_infos;
-			Rtcr::Stored_cpu_thread_info cpu_thread						= *stored_cpu_thread_infos.first();
-			Genode::uint16_t pd_session_badge						= cpu_thread.pd_session_badge;
-			Genode::Cpu_session::Name name							= cpu_thread.name;
-			Genode::Cpu_session::Weight weight						= cpu_thread.weight;
-			Genode::addr_t utcb								= cpu_thread.utcb;
-			bool started									= cpu_thread.started;
-			bool paused									= cpu_thread.paused;
-			bool single_step								= cpu_thread.single_step;
-			Genode::Affinity::Location affinity						= cpu_thread.affinity;
-			Genode::uint16_t cpu_thread_sigh_badge						= cpu_thread.sigh_badge;
-			Genode::Thread_state target_state						= cpu_thread.ts;
-			Genode::addr_t   thread_kcap                                                    = cpu_thread.kcap;
-                        Genode::uint16_t thread_badge                                                   = cpu_thread.badge;
-                        bool             thread_bootstrapped                                            = cpu_thread.bootstrapped;
-			/* protobuf */
-			protobuf::Stored_cpu_session_info* _cpu_session 				= _ts.add__stored_cpu_sessions();
-			_cpu_session->set_sigh_badge(cpu_session_sigh_badge);
-			protobuf::Stored_session_info _cpu_session_info                                  = protobuf::Stored_session_info();
-                        protobuf::Stored_general_info _cpu_general_info                                  = protobuf::Stored_general_info();
-			_cpu_general_info.set_kcap(cpu_kcap);
-                        _cpu_general_info.set_badge(cpu_badge);
-                        _cpu_general_info.set_bootstrapped(cpu_bootstrapped);
-                        _cpu_session_info.set_creation_args(cpu_creation_args.string());
-                        _cpu_session_info.set_upgrade_args(cpu_upgrade_args.string());
-                        _cpu_session_info.set_allocated_general_info(&_cpu_general_info);
-			_cpu_session->set_allocated_session_info(&_cpu_session_info);
-			protobuf::Stored_cpu_thread_info* _cpu_thread                                   = _cpu_session->add_stored_cpu_thread_infos();
-			protobuf::Stored_normal_info _cpu_thread_normal_info                                  = protobuf::Stored_normal_info();
-                        protobuf::Stored_general_info _cpu_thread_general_info                                  = protobuf::Stored_general_info();
-                        _cpu_thread_general_info.set_kcap(thread_kcap);
-                        _cpu_thread_general_info.set_badge(thread_badge);
-                        _cpu_thread_general_info.set_bootstrapped(thread_bootstrapped);
-                        _cpu_thread_normal_info.set_allocated_general_info(&_cpu_thread_general_info);
-                        _cpu_thread->set_allocated_normal_info(&_cpu_thread_normal_info);
-			_cpu_thread->set_pd_session_badge(pd_session_badge);
-			_cpu_thread->set_name(name.string());
-			_cpu_thread->set_weight(std::to_string(weight.value).c_str());
-			_cpu_thread->set_utcb(utcb);
-			_cpu_thread->set_started(started);
-			_cpu_thread->set_paused(paused);
-			_cpu_thread->set_single_step(single_step);
-			_cpu_thread->set_affinity(affinity.xpos());
-			_cpu_thread->set_sigh_badge(cpu_thread_sigh_badge);
-			_cpu_thread->set_ts(target_state.exception);
-			PDBG("cpu protofiles completed");
+			Genode::List<Rtcr::Stored_cpu_thread_info> stored_cpu_thread_infos		= cpu_session->stored_cpu_thread_infos;
+			Rtcr::Stored_cpu_thread_info* cpu_thread					= stored_cpu_thread_infos.first();
+			while(cpu_thread) {
+			Genode::uint16_t pd_session_badge						= cpu_thread->pd_session_badge;
+			Genode::Cpu_session::Name name							= cpu_thread->name;
+			Genode::Cpu_session::Weight weight						= cpu_thread->weight;
+			Genode::addr_t utcb								= cpu_thread->utcb;
+			bool started									= cpu_thread->started;
+			bool paused									= cpu_thread->paused;
+			bool single_step								= cpu_thread->single_step;
+			Genode::Affinity::Location affinity						= cpu_thread->affinity;
+			Genode::uint16_t cpu_thread_sigh_badge						= cpu_thread->sigh_badge;
+			Genode::Thread_state target_state						= cpu_thread->ts;
+			Genode::addr_t   thread_kcap                                                    = cpu_thread->kcap;
+                        Genode::uint16_t thread_badge                                                   = cpu_thread->badge;
+                        bool             thread_bootstrapped                                            = cpu_thread->bootstrapped;
+			
+			_cpu_thread[_cpu_thread_counter]                                   		= _cpu_session[_cpu_counter]->add_stored_cpu_thread_infos();
+			_cpu_normal_info[_cpu_normal_info_counter]                            		= protobuf::Stored_normal_info();
+                        _cpu_general_info[_cpu_general_info_counter]                          		= protobuf::Stored_general_info();
+                        _cpu_general_info[_cpu_general_info_counter].set_kcap(thread_kcap);
+                        _cpu_general_info[_cpu_general_info_counter].set_badge(thread_badge);
+                        _cpu_general_info[_cpu_general_info_counter].set_bootstrapped(thread_bootstrapped);
+                        _cpu_normal_info[_cpu_normal_info_counter].set_allocated_general_info(&_cpu_general_info[_cpu_general_info_counter]);
+                        _cpu_thread[_cpu_thread_counter]->set_allocated_normal_info(&_cpu_normal_info[_cpu_normal_info_counter]);
+			_cpu_thread[_cpu_thread_counter]->set_pd_session_badge(pd_session_badge);
+			_cpu_thread[_cpu_thread_counter]->set_name(name.string());
+			_cpu_thread[_cpu_thread_counter]->set_weight(std::to_string(weight.value).c_str());
+			_cpu_thread[_cpu_thread_counter]->set_utcb(utcb);
+			_cpu_thread[_cpu_thread_counter]->set_started(started);
+			_cpu_thread[_cpu_thread_counter]->set_paused(paused);
+			_cpu_thread[_cpu_thread_counter]->set_single_step(single_step);
+			_cpu_thread[_cpu_thread_counter]->set_affinity(affinity.xpos());
+			_cpu_thread[_cpu_thread_counter]->set_sigh_badge(cpu_thread_sigh_badge);
+			_cpu_thread[_cpu_thread_counter]->set_ts(target_state.exception);
+
+			cpu_thread=cpu_thread->next();
+
+			_cpu_thread_counter++;
+			_cpu_general_info_counter++;
+			_cpu_normal_info_counter++;
+			}
+			cpu_session=cpu_session->next();
+			_cpu_counter++;
+			}
 
 			/* RAM Session */
 			/* rtcr */
