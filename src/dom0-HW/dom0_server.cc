@@ -354,158 +354,307 @@ void Dom0_server::serve()
 			}
 
 			/* RAM Session */
+			protobuf::Stored_ram_session_info* _ram_session[10];
+			int _ram_counter=0;
+			protobuf::Stored_ram_dataspace_info* _ram_ds[10];
+			int _ram_ds_counter=0;
+			protobuf::Stored_session_info _ram_session_info[10];
+			int _ram_session_info_counter=0;
+			protobuf::Stored_normal_info _ram_normal_info[10];
+			int _ram_normal_info_counter=0;
+			protobuf::Stored_general_info _ram_general_info[10];
+			int _ram_general_info_counter=0;
 			/* rtcr */
 			Genode::List<Rtcr::Stored_ram_session_info> _stored_ram_sessions 		= ts._stored_ram_sessions;
-			Rtcr::Stored_ram_session_info ram_session					= *_stored_ram_sessions.first();
-			Genode::String<160> ram_creation_args                                            = ram_session.creation_args;
-                        Genode::String<160> ram_upgrade_args                                             = ram_session.upgrade_args;
-                        Genode::addr_t   ram_kcap                                                        = ram_session.kcap;
-                        Genode::uint16_t ram_badge                                                       = ram_session.badge;
-                        bool             ram_bootstrapped                                                = ram_session.bootstrapped;
-			Genode::List<Rtcr::Stored_ram_dataspace_info> stored_ramds_infos		= ram_session.stored_ramds_infos;
-			Rtcr::Stored_ram_dataspace_info ramds						= *stored_ramds_infos.first();
-			Genode::Ram_dataspace_capability ram_memory_content				= ramds.memory_content;
+			Rtcr::Stored_ram_session_info* ram_session					= _stored_ram_sessions.first();
+			while(ram_session) {
+			Genode::String<160> ram_creation_args                                            = ram_session->creation_args;
+                        Genode::String<160> ram_upgrade_args                                             = ram_session->upgrade_args;
+                        Genode::addr_t   ram_kcap                                                        = ram_session->kcap;
+                        Genode::uint16_t ram_badge                                                       = ram_session->badge;
+                        bool             ram_bootstrapped                                                = ram_session->bootstrapped;
+
+			_ram_session[_ram_counter]							= _ts.add__stored_ram_sessions();
+			_ram_session_info[_ram_session_info_counter]                                 	= protobuf::Stored_session_info();
+                        _ram_general_info[_ram_general_info_counter]                                 	= protobuf::Stored_general_info();
+                        _ram_general_info[_ram_general_info_counter].set_kcap(ram_kcap);
+                        _ram_general_info[_ram_general_info_counter].set_badge(ram_badge);
+                        _ram_general_info[_ram_general_info_counter].set_bootstrapped(ram_bootstrapped);
+                        _ram_session_info[_ram_session_info_counter].set_creation_args(ram_creation_args.string());
+                        _ram_session_info[_ram_session_info_counter].set_upgrade_args(ram_upgrade_args.string());
+                        _ram_session_info[_ram_session_info_counter].set_allocated_general_info(&_ram_general_info[_ram_general_info_counter]);
+                        _ram_session[_ram_counter]->set_allocated_session_info(&_ram_session_info[_ram_session_info_counter]);
+
+			_ram_session_info_counter++;
+			_ram_general_info_counter++;
+
+			Genode::List<Rtcr::Stored_ram_dataspace_info> stored_ramds_infos		= ram_session->stored_ramds_infos;
+			Rtcr::Stored_ram_dataspace_info* ramds						= stored_ramds_infos.first();
+			while(ramds) {
+			Genode::Ram_dataspace_capability ram_memory_content				= ramds->memory_content;
 
 			/* attache capability to send it over network */
 			//char* ram_content								= (char*)Genode::env()->rm_session()->attach(ram_memory_content);
-			Genode::size_t ram_size								= ramds.size;
+			Genode::size_t ram_size								= ramds->size;
 			//lwip_write(_target_socket,ram_content,ram_size);
 
-			Genode::Cache_attribute cached							= ramds.cached;
-			bool managed									= ramds.managed;
-			Genode::size_t timestamp							= ramds.timestamp;
-			/* protobuf */
-			protobuf::Stored_ram_session_info* _ram_session					= _ts.add__stored_ram_sessions();
-			protobuf::Stored_session_info _ram_session_info                                 = protobuf::Stored_session_info();
-                        protobuf::Stored_general_info _ram_general_info                                 = protobuf::Stored_general_info();
-                        _ram_general_info.set_kcap(ram_kcap);
-                        _ram_general_info.set_badge(ram_badge);
-                        _ram_general_info.set_bootstrapped(ram_bootstrapped);
-                        _ram_session_info.set_creation_args(ram_creation_args.string());
-                        _ram_session_info.set_upgrade_args(ram_upgrade_args.string());
-                        _ram_session_info.set_allocated_general_info(&_ram_general_info);
-                        _ram_session->set_allocated_session_info(&_ram_session_info);
-			protobuf::Stored_ram_dataspace_info* _ramds					= _ram_session->add_stored_ramds_infos();
-			_ramds->set_size(ram_size);
-			_ramds->set_cached(cached);
-			_ramds->set_managed(managed);
-			_ramds->set_timestamp(timestamp);
+			Genode::Cache_attribute cached							= ramds->cached;
+			bool managed									= ramds->managed;
+			Genode::size_t timestamp							= ramds->timestamp;
+
+			Genode::addr_t   ram_ds_kcap                                                    = ramds->kcap;
+                        Genode::uint16_t ram_ds_badge                                                   = ramds->badge;
+                        bool             ram_ds_bootstrapped                                            = ramds->bootstrapped;
+			
+			_ram_ds[_ram_ds_counter]							= _ram_session[_ram_counter]->add_stored_ramds_infos();
+			_ram_ds[_ram_ds_counter]->set_size(ram_size);
+			_ram_ds[_ram_ds_counter]->set_cached(cached);
+			_ram_ds[_ram_ds_counter]->set_managed(managed);
+			_ram_ds[_ram_ds_counter]->set_timestamp(timestamp);
+			_ram_normal_info[_ram_normal_info_counter]                                 		= protobuf::Stored_normal_info();
+                        _ram_general_info[_ram_general_info_counter]                                 	= protobuf::Stored_general_info();
+                        _ram_general_info[_ram_general_info_counter].set_kcap(ram_ds_kcap);
+                        _ram_general_info[_ram_general_info_counter].set_badge(ram_ds_badge);
+                        _ram_general_info[_ram_general_info_counter].set_bootstrapped(ram_ds_bootstrapped);
+			_ram_normal_info[_ram_normal_info_counter].set_allocated_general_info(&_ram_general_info[_ram_general_info_counter]);
+                        _ram_ds[_ram_ds_counter]->set_allocated_normal_info(&_ram_normal_info[_ram_normal_info_counter]);
+
+			_ram_normal_info_counter++;
+			_ram_general_info_counter++;
+
+			ramds=ramds->next();
+
+			}
+			_ram_counter++;
+			ram_session=ram_session->next();
+			}
+
 			PDBG("ram protofiles completed");
 
 			/* ROM Session */
+			protobuf::Stored_rom_session_info* _rom_session[10];
+			int _rom_counter=0;
+			protobuf::Stored_session_info _rom_session_info[10];
+			int _rom_session_info_counter=0;
+			protobuf::Stored_general_info _rom_general_info[10];
+			int _rom_general_info_counter=0;
 			/* rtcr */
 			Genode::List<Rtcr::Stored_rom_session_info> _stored_rom_sessions 		= ts._stored_rom_sessions;
-			if(_stored_rom_sessions.first()){
-			Rtcr::Stored_rom_session_info rom_session					= *_stored_rom_sessions.first();
-			Genode::String<160> rom_creation_args                                            = rom_session.creation_args;
-                        Genode::String<160> rom_upgrade_args                                             = rom_session.upgrade_args;
-                        Genode::addr_t   rom_kcap                                                        = rom_session.kcap;
-                        Genode::uint16_t rom_badge                                                       = rom_session.badge;
-                        bool             rom_bootstrapped                                                = rom_session.bootstrapped;
-			Genode::uint16_t dataspace_badge						= rom_session.dataspace_badge;
-			Genode::uint16_t rom_sigh_badge							= rom_session.sigh_badge;
+			Rtcr::Stored_rom_session_info* rom_session					= _stored_rom_sessions.first();
+			while(rom_session){
+			Genode::String<160> rom_creation_args                                            = rom_session->creation_args;
+                        Genode::String<160> rom_upgrade_args                                             = rom_session->upgrade_args;
+                        Genode::addr_t   rom_kcap                                                        = rom_session->kcap;
+                        Genode::uint16_t rom_badge                                                       = rom_session->badge;
+                        bool             rom_bootstrapped                                                = rom_session->bootstrapped;
+			Genode::uint16_t dataspace_badge						= rom_session->dataspace_badge;
+			Genode::uint16_t rom_sigh_badge							= rom_session->sigh_badge;
 			/* protobuf */
-			protobuf::Stored_rom_session_info* _rom_session					= _ts.add__stored_rom_sessions();
-			protobuf::Stored_session_info _rom_session_info                                  = protobuf::Stored_session_info();
-                        protobuf::Stored_general_info _rom_general_info                                  = protobuf::Stored_general_info();
-                        _rom_general_info.set_kcap(rom_kcap);
-                        _rom_general_info.set_badge(rom_badge);
-                        _rom_general_info.set_bootstrapped(rom_bootstrapped);
-                        _rom_session_info.set_creation_args(rom_creation_args.string());
-                        _rom_session_info.set_upgrade_args(rom_upgrade_args.string());
-                        _rom_session_info.set_allocated_general_info(&_rom_general_info);
-                        _rom_session->set_allocated_session_info(&_rom_session_info);
-			_rom_session->set_dataspace_badge(dataspace_badge);
-			_rom_session->set_sigh_badge(rom_sigh_badge);
+			_rom_session[_rom_counter]							= _ts.add__stored_rom_sessions();
+			_rom_session_info[_rom_session_info_counter]                                  = protobuf::Stored_session_info();
+                        _rom_general_info[_rom_general_info_counter]                                  = protobuf::Stored_general_info();
+                        _rom_general_info[_rom_general_info_counter].set_kcap(rom_kcap);
+                        _rom_general_info[_rom_general_info_counter].set_badge(rom_badge);
+                        _rom_general_info[_rom_general_info_counter].set_bootstrapped(rom_bootstrapped);
+                        _rom_session_info[_rom_session_info_counter].set_creation_args(rom_creation_args.string());
+                        _rom_session_info[_rom_session_info_counter].set_upgrade_args(rom_upgrade_args.string());
+			_rom_session_info[_rom_session_info_counter].set_allocated_general_info(&_rom_general_info[_rom_general_info_counter]);
+                        _rom_session[_rom_counter]->set_allocated_session_info(&_rom_session_info[_rom_session_info_counter]);
+			_rom_session[_rom_counter]->set_dataspace_badge(dataspace_badge);
+			_rom_session[_rom_counter]->set_sigh_badge(rom_sigh_badge);
+
+			_rom_counter++;
+			_rom_session_info_counter++;
+			_rom_general_info_counter++;
+
+			rom_session=rom_session->next();
 			}
 			PDBG("rom protofiles completed");
 
 			/* RM Session */
+			protobuf::Stored_rm_session_info* _rm_session[10];
+			int _rm_counter=0;
+			protobuf::Stored_region_map_info* _region_map[10];
+			int _region_map_counter=0;
+			protobuf::Stored_attached_region_info* _attached_region[10];
+			int _attached_region_counter=0;
+			protobuf::Stored_session_info _rm_session_info[10];
+			int _rm_session_info_counter=0;
+			protobuf::Stored_normal_info _rm_normal_info[10];
+			int _rm_normal_info_counter=0;
+			protobuf::Stored_general_info _rm_general_info[10];
+			int _rm_general_info_counter=0;
 			/* rtcr */
 			Genode::List<Rtcr::Stored_rm_session_info> _stored_rm_sessions 			= ts._stored_rm_sessions;
-			if(_stored_rm_sessions.first()){
-			Rtcr::Stored_rm_session_info rm_session						= *_stored_rm_sessions.first();
-			Genode::String<160> rm_creation_args                                            = rm_session.creation_args;
-                        Genode::String<160> rm_upgrade_args                                             = rm_session.upgrade_args;
-                        Genode::addr_t   rm_kcap                                                        = rm_session.kcap;
-                        Genode::uint16_t rm_badge                                                       = rm_session.badge;
-                        bool             rm_bootstrapped                                                = rm_session.bootstrapped;
-			Genode::List<Rtcr::Stored_region_map_info> _stored_region_map_infos		= rm_session.stored_region_map_infos;
-			if(_stored_region_map_infos.first()){
-			Rtcr::Stored_region_map_info region_map						= *_stored_region_map_infos.first();
-			Genode::size_t   rm_size							= region_map.size;
-			Genode::uint16_t ds_badge							= region_map.ds_badge;
-			Genode::uint16_t rm_sigh_badge							= region_map.sigh_badge;
-			Genode::List<Rtcr::Stored_attached_region_info> _stored_attached_region_infos	= region_map.stored_attached_region_infos;
-			if(_stored_attached_region_infos.first()){
-			Rtcr::Stored_attached_region_info attached_region				= *_stored_attached_region_infos.first();
-			Genode::uint16_t attached_ds_badge						= attached_region.attached_ds_badge;
-			Genode::Ram_dataspace_capability rm_memory_content				= attached_region.memory_content;
+			Rtcr::Stored_rm_session_info* rm_session					= _stored_rm_sessions.first();
+			while(rm_session){
+			
+			Genode::String<160> rm_creation_args                                            = rm_session->creation_args;
+                        Genode::String<160> rm_upgrade_args                                             = rm_session->upgrade_args;
+                        Genode::addr_t   rm_kcap                                                        = rm_session->kcap;
+                        Genode::uint16_t rm_badge                                                       = rm_session->badge;
+                        bool             rm_bootstrapped                                                = rm_session->bootstrapped;
+
+			_rm_session[_rm_counter]							= _ts.add__stored_rm_sessions();
+			_rm_session_info[_rm_session_info_counter]                                  	= protobuf::Stored_session_info();
+                        _rm_general_info[_rm_general_info_counter]                                  	= protobuf::Stored_general_info();
+                        _rm_general_info[_rm_general_info_counter].set_kcap(rm_kcap);
+                        _rm_general_info[_rm_general_info_counter].set_badge(rm_badge);
+                        _rm_general_info[_rm_general_info_counter].set_bootstrapped(rm_bootstrapped);
+                        _rm_session_info[_rm_session_info_counter].set_creation_args(rm_creation_args.string());
+                        _rm_session_info[_rm_session_info_counter].set_upgrade_args(rm_upgrade_args.string());
+                        _rm_session_info[_rm_session_info_counter].set_allocated_general_info(&_rm_general_info[_rm_general_info_counter]);
+                        _rm_session[_rm_counter]->set_allocated_session_info(&_rm_session_info[_rm_session_info_counter]);
+
+			_rm_session_info_counter++;
+			_rm_general_info_counter++;
+
+			Genode::List<Rtcr::Stored_region_map_info> _stored_region_map_infos		= rm_session->stored_region_map_infos;
+			Rtcr::Stored_region_map_info* region_map					= _stored_region_map_infos.first();
+			while(region_map){
+			
+			Genode::size_t   rm_size							= region_map->size;
+			Genode::uint16_t ds_badge							= region_map->ds_badge;
+			Genode::uint16_t rm_sigh_badge							= region_map->sigh_badge;
+			Genode::addr_t   map_kcap                                                        = region_map->kcap;
+                        Genode::uint16_t map_badge                                                       = region_map->badge;
+                        bool             map_bootstrapped                                                = region_map->bootstrapped;
+
+			_region_map[_region_map_counter]						= _rm_session[_rm_counter]->add_stored_region_map_infos();
+			_rm_normal_info[_rm_normal_info_counter]                                 	= protobuf::Stored_normal_info();
+                        _rm_general_info[_rm_general_info_counter]                                 	= protobuf::Stored_general_info();
+			_rm_general_info[_rm_general_info_counter].set_kcap(map_kcap);
+                        _rm_general_info[_rm_general_info_counter].set_badge(map_badge);
+                        _rm_general_info[_rm_general_info_counter].set_bootstrapped(map_bootstrapped);
+			_region_map[_region_map_counter]->set_size(rm_size);
+			_region_map[_region_map_counter]->set_ds_badge(ds_badge);
+			_region_map[_region_map_counter]->set_sigh_badge(rm_sigh_badge);
+			_rm_normal_info[_rm_normal_info_counter].set_allocated_general_info(&_rm_general_info[_rm_general_info_counter]);
+                        _region_map[_region_map_counter]->set_allocated_normal_info(&_rm_normal_info[_rm_normal_info_counter]);
+
+			_rm_normal_info_counter++;
+			_rm_general_info_counter++;
+
+			Genode::List<Rtcr::Stored_attached_region_info> _stored_attached_region_infos	= region_map->stored_attached_region_infos;
+			Rtcr::Stored_attached_region_info* attached_region				= _stored_attached_region_infos.first();
+			while(attached_region){
+			
+			Genode::uint16_t attached_ds_badge						= attached_region->attached_ds_badge;
+			Genode::Ram_dataspace_capability rm_memory_content				= attached_region->memory_content;
 			
 			/* attache capability to send it over network */
 			char* rm_content								= (char*)Genode::env()->rm_session()->attach(rm_memory_content);
-			Genode::size_t attached_rm_size							= attached_region.size;
+			Genode::size_t attached_rm_size							= attached_region->size;
         		//lwip_write(_target_socket,&attached_rm_size,4);
 			//lwip_write(_target_socket,rm_content,attached_rm_size);
 			
-			Genode::off_t offset								= attached_region.offset;
-			Genode::addr_t rel_addr								= attached_region.rel_addr;
-			bool executable									= attached_region.executable;
-			/* protobuf */
-			protobuf::Stored_rm_session_info* _rm_session					= _ts.add__stored_rm_sessions();
-			protobuf::Stored_session_info _rm_session_info                                  = protobuf::Stored_session_info();
-                        protobuf::Stored_general_info _rm_general_info                                  = protobuf::Stored_general_info();
-                        _rm_general_info.set_kcap(rm_kcap);
-                        _rm_general_info.set_badge(rm_badge);
-                        _rm_general_info.set_bootstrapped(rm_bootstrapped);
-                        _rm_session_info.set_creation_args(rm_creation_args.string());
-                        _rm_session_info.set_upgrade_args(rm_upgrade_args.string());
-                        _rm_session_info.set_allocated_general_info(&_rm_general_info);
-                        _rm_session->set_allocated_session_info(&_rm_session_info);
-			protobuf::Stored_region_map_info* _region_map_infos				= _rm_session->add_stored_region_map_infos();
-			protobuf::Stored_attached_region_info* _attached_region_infos			= _region_map_infos->add_stored_attached_region_infos();
-			_region_map_infos->set_size(rm_size);
-			_region_map_infos->set_ds_badge(ds_badge);
-			_region_map_infos->set_sigh_badge(rm_sigh_badge);
-			_attached_region_infos->set_attached_ds_badge(attached_ds_badge);
-			_attached_region_infos->set_size(attached_rm_size);
-			_attached_region_infos->set_offset(offset);
-			_attached_region_infos->set_rel_addr(rel_addr);
-			_attached_region_infos->set_executable(executable);
-			}}}
+			Genode::off_t offset								= attached_region->offset;
+			Genode::addr_t rel_addr								= attached_region->rel_addr;
+			bool executable									= attached_region->executable;
+
+			Genode::addr_t   attached_kcap                                                        = attached_region->kcap;
+                        Genode::uint16_t attached_badge                                                       = attached_region->badge;
+                        bool             attached_bootstrapped                                                = attached_region->bootstrapped;
+			
+			_attached_region[_attached_region_counter]					= _region_map[_region_map_counter]->add_stored_attached_region_infos();
+			_rm_normal_info[_rm_normal_info_counter]                                 	= protobuf::Stored_normal_info();
+                        _rm_general_info[_rm_general_info_counter]                                 	= protobuf::Stored_general_info();
+			_rm_general_info[_rm_general_info_counter].set_kcap(attached_kcap);
+                        _rm_general_info[_rm_general_info_counter].set_badge(attached_badge);
+                        _rm_general_info[_rm_general_info_counter].set_bootstrapped(attached_bootstrapped);
+			_attached_region[_attached_region_counter]->set_attached_ds_badge(attached_ds_badge);
+			_attached_region[_attached_region_counter]->set_size(attached_rm_size);
+			_attached_region[_attached_region_counter]->set_offset(offset);
+			_attached_region[_attached_region_counter]->set_rel_addr(rel_addr);
+			_attached_region[_attached_region_counter]->set_executable(executable);
+			_rm_normal_info[_rm_normal_info_counter].set_allocated_general_info(&_rm_general_info[_rm_general_info_counter]);
+                        _attached_region[_attached_region_counter]->set_allocated_normal_info(&_rm_normal_info[_rm_normal_info_counter]);
+
+			_rm_normal_info_counter++;
+			_rm_general_info_counter++;
+			attached_region=attached_region->next();
+			}
+			_region_map_counter++;
+			region_map=region_map->next();
+			}
+			_rm_counter++;
+			rm_session=rm_session->next();
+			}
 			PDBG("rm protofiles completed");
 
 			/* LOG Session */
+			protobuf::Stored_log_session_info* _log_session[10];
+			int _log_counter=0;
+			protobuf::Stored_session_info _log_session_info[10];
+			int _log_session_info_counter=0;
+			protobuf::Stored_general_info _log_general_info[10];
+			int _log_general_info_counter=0;
 			/* rtcr */
-			//Genode::List<Rtcr::Stored_log_session_info> _stored_log_sessions 		= ts._stored_log_sessions;
-			/* empty */
+			Genode::List<Rtcr::Stored_log_session_info> _stored_log_sessions 		= ts._stored_log_sessions;
+			Rtcr::Stored_log_session_info* log_session					= _stored_log_sessions.first();
+			while(log_session) {
+			Genode::String<160> log_creation_args                                            = log_session->creation_args;
+                        Genode::String<160> log_upgrade_args                                             = log_session->upgrade_args;
+                        Genode::addr_t   log_kcap                                                        = log_session->kcap;
+                        Genode::uint16_t log_badge                                                       = log_session->badge;
+                        bool             log_bootstrapped                                                = log_session->bootstrapped;
+
+			_log_session[_log_counter]				= _ts.add__stored_log_sessions();
+			_log_session_info[_log_session_info_counter]                                 = protobuf::Stored_session_info();
+                        _log_general_info[_log_general_info_counter]                                  = protobuf::Stored_general_info();
+                        _log_general_info[_log_general_info_counter].set_kcap(log_kcap);
+                        _log_general_info[_log_general_info_counter].set_badge(log_badge);
+                        _log_general_info[_log_general_info_counter].set_bootstrapped(log_bootstrapped);
+                        _log_session_info[_log_session_info_counter].set_creation_args(log_creation_args.string());
+                        _log_session_info[_log_session_info_counter].set_upgrade_args(log_upgrade_args.string());
+			_log_session_info[_log_session_info_counter].set_allocated_general_info(&_log_general_info[_log_general_info_counter]);
+			_log_session[_log_counter]->set_allocated_session_info(&_log_session_info[_log_session_info_counter]);
+			
+			_log_counter++;
+			_log_session_info_counter++;
+			_log_general_info_counter++;
+			log_session=log_session->next();
+			}
 
 			/* Timer Session */
+			protobuf::Stored_timer_session_info* _timer_session[10];
+			int _timer_counter=0;
+			protobuf::Stored_session_info _timer_session_info[10];
+			int _timer_session_info_counter=0;
+			protobuf::Stored_general_info _timer_general_info[10];
+			int _timer_general_info_counter=0;
 			/* rtcr */
 			Genode::List<Rtcr::Stored_timer_session_info> _stored_timer_sessions 		= ts._stored_timer_sessions;
-			Rtcr::Stored_timer_session_info timer_session					= *_stored_timer_sessions.first();
-			Genode::String<160> timer_creation_args                                            = timer_session.creation_args;
-                        Genode::String<160> timer_upgrade_args                                             = timer_session.upgrade_args;
-                        Genode::addr_t   timer_kcap                                                        = timer_session.kcap;
-                        Genode::uint16_t timer_badge                                                       = timer_session.badge;
-                        bool             timer_bootstrapped                                                = timer_session.bootstrapped;
-			Genode::uint16_t timer_sigh_badge						= timer_session.sigh_badge;
-			unsigned         timeout							= timer_session.timeout;
-			bool             periodic							= timer_session.periodic;
+			Rtcr::Stored_timer_session_info* timer_session					= _stored_timer_sessions.first();
+			while(timer_session) {
+			Genode::String<160> timer_creation_args                                            = timer_session->creation_args;
+                        Genode::String<160> timer_upgrade_args                                             = timer_session->upgrade_args;
+                        Genode::addr_t   timer_kcap                                                        = timer_session->kcap;
+                        Genode::uint16_t timer_badge                                                       = timer_session->badge;
+                        bool             timer_bootstrapped                                                = timer_session->bootstrapped;
+			Genode::uint16_t timer_sigh_badge						= timer_session->sigh_badge;
+			unsigned         timeout							= timer_session->timeout;
+			bool             periodic							= timer_session->periodic;
 			/* protobuf */
-			protobuf::Stored_timer_session_info* _timer_session				= _ts.add__stored_timer_sessions();
-			protobuf::Stored_session_info _timer_session_info                                  = protobuf::Stored_session_info();
-                        protobuf::Stored_general_info _timer_general_info                                  = protobuf::Stored_general_info();
-                        _timer_general_info.set_kcap(timer_kcap);
-                        _timer_general_info.set_badge(timer_badge);
-                        _timer_general_info.set_bootstrapped(timer_bootstrapped);
-                        _timer_session_info.set_creation_args(timer_creation_args.string());
-                        _timer_session_info.set_upgrade_args(timer_upgrade_args.string());
-                        _timer_session_info.set_allocated_general_info(&_timer_general_info);
-                        _timer_session->set_allocated_session_info(&_timer_session_info);
-			_timer_session->set_sigh_badge(timer_sigh_badge);
-			_timer_session->set_timeout(timeout);
-			_timer_session->set_periodic(periodic);
+			_timer_session[_timer_counter]				= _ts.add__stored_timer_sessions();
+			_timer_session_info[_timer_session_info_counter]                                 = protobuf::Stored_session_info();
+                        _timer_general_info[_timer_general_info_counter]                                  = protobuf::Stored_general_info();
+                        _timer_general_info[_timer_general_info_counter].set_kcap(timer_kcap);
+                        _timer_general_info[_timer_general_info_counter].set_badge(timer_badge);
+                        _timer_general_info[_timer_general_info_counter].set_bootstrapped(timer_bootstrapped);
+                        _timer_session_info[_timer_session_info_counter].set_creation_args(timer_creation_args.string());
+                        _timer_session_info[_timer_session_info_counter].set_upgrade_args(timer_upgrade_args.string());
+                        _timer_session_info[_timer_session_info_counter].set_allocated_general_info(&_timer_general_info[_timer_general_info_counter]);
+			_timer_session[_timer_counter]->set_allocated_session_info(&_timer_session_info[_timer_session_info_counter]);
+			_timer_session[_timer_counter]->set_sigh_badge(timer_sigh_badge);
+			_timer_session[_timer_counter]->set_timeout(timeout);
+			_timer_session[_timer_counter]->set_periodic(periodic);
+			
+			_timer_session_info_counter++;
+			_timer_general_info_counter++;
+			_timer_counter++;
+			timer_session=timer_session->next();
+			}
 			PDBG("timer protofiles completed");
 
 			/* String target state is serialized to */
