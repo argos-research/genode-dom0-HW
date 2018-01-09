@@ -21,9 +21,9 @@ namespace Dom0_server
 
 		public:
 
-			void send_profile()
+			void send_profile(Genode::String<32> task_name)
 			{
-				return _dom0_server->send_profile();
+				return _dom0_server->send_profile(task_name);
 			}
 
 			Session_component(Dom0_server *dom0_server)

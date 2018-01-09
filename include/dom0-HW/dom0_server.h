@@ -6,6 +6,7 @@
 #include <taskloader/taskloader_connection.h>
 #include <parser/parser_connection.h>
 #include <timer_session/connection.h>
+#include "sched_controller_session/connection.h"
 
 /*extern "C" {
 #include <lwip/stats.h>
@@ -65,6 +66,7 @@ private:
 	Taskloader_connection _task_loader;
 	Parser_connection _parser;
 	Timer::Connection timer;
+	Sched_controller::Connection _controller;
 	static Child_starter_thread _starter_thread;
 
 public:
@@ -80,7 +82,7 @@ public:
 
 	void start();
 
-	void send_profile();
+	void send_profile(Genode::String<32> task_name);
 
 
 };

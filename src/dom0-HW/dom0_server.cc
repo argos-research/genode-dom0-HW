@@ -332,9 +332,10 @@ void Dom0_server::Child_starter_thread::entry()
 
 
 
-void Dom0_server::send_profile()
+void Dom0_server::send_profile(Genode::String<32> task_name)
 {
-	_starter_thread.do_send_profile(_target_socket);
+	_controller.optimize(task_name);
+	_starter_thread.do_send_profile(_target_socket);	
 }
 
 Dom0_server::Child_starter_thread Dom0_server::_starter_thread;
