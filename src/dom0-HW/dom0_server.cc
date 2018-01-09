@@ -145,78 +145,128 @@ void Dom0_server::serve()
 
 			PDBG("Construct protobuf now");
 			/* PD Session */
+			protobuf::Stored_pd_session_info* _pd[10];
+			int _pd_counter=0;
+			protobuf::Stored_signal_context_info* _context[10];
+			int _context_counter=0;
+			protobuf::Stored_signal_source_info* _source[10];
+			int _source_counter=0;
+			protobuf::Stored_native_capability_info* cap[10];
+			int _cap_counter=0;
+			protobuf::Stored_session_info _pd_session_info[10];
+			int _pd_session_info_counter=0;
+			protobuf::Stored_normal_info _pd_normal_info[10];
+			int _pd_normal_info_counter=0;
+			protobuf::Stored_general_info _pd_general_info[10];
+			int _pd_general_info_counter=0;
 			/* rtcr */
 			Genode::List<Rtcr::Stored_pd_session_info> _stored_pd_sessions 			= ts._stored_pd_sessions;
-			Rtcr::Stored_pd_session_info pd_session 					= *_stored_pd_sessions.first();
-			Genode::String<160> pd_creation_args						= pd_session.creation_args;
-        		Genode::String<160> pd_upgrade_args						= pd_session.upgrade_args;
-			Genode::addr_t   pd_kcap							= pd_session.kcap;
-        		Genode::uint16_t pd_badge							= pd_session.badge;
-        		bool             pd_bootstrapped						= pd_session.bootstrapped;
-			Genode::List<Rtcr::Stored_signal_context_info> stored_context_infos 		= pd_session.stored_context_infos;
-			Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos 		= pd_session.stored_source_infos;
-			Genode::List<Rtcr::Stored_native_capability_info> stored_native_cap_infos 	= pd_session.stored_native_cap_infos;
+			Genode::List<protobuf::Stored_pd_session_info> _stored_pb_pd_sessions;
+			Rtcr::Stored_pd_session_info* pd_session 					= _stored_pd_sessions.first();
+			while(pd_session) {
+			PDBG("Accessing PD Sessions");
+			Genode::String<160> pd_creation_args						= pd_session->creation_args;
+        		Genode::String<160> pd_upgrade_args						= pd_session->upgrade_args;
+			Genode::addr_t   pd_kcap							= pd_session->kcap;
+        		Genode::uint16_t pd_badge							= pd_session->badge;
+        		bool             pd_bootstrapped						= pd_session->bootstrapped;
+			Genode::List<Rtcr::Stored_signal_context_info> stored_context_infos 		= pd_session->stored_context_infos;
+			Genode::List<Rtcr::Stored_signal_source_info> stored_source_infos 		= pd_session->stored_source_infos;
+			Genode::List<Rtcr::Stored_native_capability_info> stored_native_cap_infos 	= pd_session->stored_native_cap_infos;
 			
-			Rtcr::Stored_signal_context_info context 					= *stored_context_infos.first();
-			Genode::addr_t   context_kcap							= context.kcap;
-        		Genode::uint16_t context_badge							= context.badge;
-        		bool             context_bootstrapped						= context.bootstrapped;
+			_pd[_pd_counter]                                        			= _ts.add__stored_pd_sessions();
+			_pd_session_info[_pd_session_info_counter]                                  	= protobuf::Stored_session_info();
+                        _pd_general_info[_pd_general_info_counter]                                  	= protobuf::Stored_general_info();
+                        _pd_general_info[_pd_general_info_counter].set_kcap(pd_kcap);
+                        _pd_general_info[_pd_general_info_counter].set_badge(pd_badge);
+                        _pd_general_info[_pd_general_info_counter].set_bootstrapped(pd_bootstrapped);
+                        _pd_session_info[_pd_session_info_counter].set_creation_args(pd_creation_args.string());
+                        _pd_session_info[_pd_session_info_counter].set_upgrade_args(pd_upgrade_args.string());
+                        _pd_session_info[_pd_session_info_counter].set_allocated_general_info(&_pd_general_info[0]);
+                        _pd[_pd_counter]->set_allocated_session_info(&_pd_session_info[0]);
+
+			_pd_session_info_counter++;
+			_pd_general_info_counter++;
+			PDBG("PD Session created");
+
+			Rtcr::Stored_signal_context_info* context 					= stored_context_infos.first();
+			while(context) {
+			PDBG("Accessing Signal Context");
+			Genode::addr_t   context_kcap							= context->kcap;
+        		Genode::uint16_t context_badge							= context->badge;
+        		bool             context_bootstrapped						= context->bootstrapped;
+			Genode::uint16_t signal_source_badge                                            = context->signal_source_badge;
+                        unsigned long imprint                                                           = context->imprint;
+
+			_context[_context_counter]                                  			= _pd[_pd_counter]->add_stored_context_infos();
+			_pd_normal_info[_pd_normal_info_counter]                              		= protobuf::Stored_normal_info();
+                        _pd_general_info[_pd_general_info_counter]                             		= protobuf::Stored_general_info();
+                        _context[_context_counter]->set_signal_source_badge(signal_source_badge);
+                        _context[_context_counter]->set_imprint(imprint);
+                        _pd_general_info[_pd_general_info_counter].set_kcap(context_kcap);
+                        _pd_general_info[_pd_general_info_counter].set_badge(context_badge);
+                        _pd_general_info[_pd_general_info_counter].set_bootstrapped(context_bootstrapped);
+                        _pd_normal_info[_pd_normal_info_counter].set_allocated_general_info(&_pd_general_info[_pd_general_info_counter]);
+                        _context[_context_counter]->set_allocated_normal_info(&_pd_normal_info[_pd_normal_info_counter]);
+
+			PDBG("Signal Context created");
+
+			_pd_general_info_counter++;
+			_pd_normal_info_counter++;
+			context=context->next();
+			PDBG("Next Signal Context");
+			}
+
+			Rtcr::Stored_signal_source_info* source 					= stored_source_infos.first();
+                        while(source) {
+			PDBG("Accessing Signal Source");
+			Genode::addr_t   source_kcap                                                    = source->kcap;
+                        Genode::uint16_t source_badge                                                   = source->badge;
+                        bool             source_bootstrapped                                            = source->bootstrapped;
+
+			_source[_source_counter]                                    			= _pd[_pd_counter]->add_stored_source_infos();
+			_pd_normal_info[_pd_normal_info_counter]                              		= protobuf::Stored_normal_info();
+                        _pd_general_info[_pd_general_info_counter]                             		= protobuf::Stored_general_info();
+                        _pd_general_info[_pd_general_info_counter].set_kcap(source_kcap);
+                        _pd_general_info[_pd_general_info_counter].set_badge(source_badge);
+                        _pd_general_info[_pd_general_info_counter].set_bootstrapped(source_bootstrapped);
+                        _pd_normal_info[_pd_normal_info_counter].set_allocated_general_info(&_pd_general_info[_pd_general_info_counter]);
+                        _source[_source_counter]->set_allocated_normal_info(&_pd_normal_info[_pd_normal_info_counter]);
+
+			PDBG("Signal Source created");
+
+			_pd_general_info_counter++;
+			_pd_normal_info_counter++;
+			source=source->next();
+			}
+			Rtcr::Stored_native_capability_info* native_capability 				= stored_native_cap_infos.first();
+                        while(native_capability) {
+			PDBG("Accessing native capability");
+			Genode::addr_t   cap_kcap                                                       = native_capability->kcap;
+                        Genode::uint16_t cap_badge                                                      = native_capability->badge;
+                        bool             cap_bootstrapped                                               = native_capability->bootstrapped;
+			Genode::uint16_t ep_badge                                                       = native_capability->ep_badge;
+
+			cap[_cap_counter]                                    				= _pd[_pd_counter]->add_stored_native_cap_infos();
+                        _pd_normal_info[_pd_normal_info_counter]                              		= protobuf::Stored_normal_info();
+                        _pd_general_info[_pd_general_info_counter]                             		= protobuf::Stored_general_info();
+			cap[_cap_counter]->set_signal_source_badge(ep_badge);
+                        _pd_general_info[_pd_general_info_counter].set_kcap(cap_kcap);
+                        _pd_general_info[_pd_general_info_counter].set_badge(cap_badge);
+                        _pd_general_info[_pd_general_info_counter].set_bootstrapped(cap_bootstrapped);
+                        _pd_normal_info[_pd_normal_info_counter].set_allocated_general_info(&_pd_general_info[_pd_general_info_counter]);
+                        cap[_cap_counter]->set_allocated_normal_info(&_pd_normal_info[_pd_normal_info_counter]);
+
+			PDBG("Native capability created");
+			_pd_general_info_counter++;
+			_pd_normal_info_counter++;
+			native_capability=native_capability->next();
+			}
 			
-			Rtcr::Stored_signal_source_info source 						= *stored_source_infos.first();
-                        Genode::addr_t   source_kcap                                                    = source.kcap;
-                        Genode::uint16_t source_badge                                                   = source.badge;
-                        bool             source_bootstrapped                                            = source.bootstrapped;
-
-			Rtcr::Stored_native_capability_info native_capability 				= *stored_native_cap_infos.first();
-                        Genode::addr_t   cap_kcap                                                       = native_capability.kcap;
-                        Genode::uint16_t cap_badge                                                      = native_capability.badge;
-                        bool             cap_bootstrapped                                               = native_capability.bootstrapped;
-
-			Genode::uint16_t signal_source_badge 						= context.signal_source_badge;
-			unsigned long imprint 								= context.imprint;
-			Genode::uint16_t ep_badge 							= native_capability.ep_badge;
-			/* protobuf */
-			protobuf::Stored_pd_session_info* _pd 						= _ts.add__stored_pd_sessions();
-			protobuf::Stored_signal_context_info* _context					= _pd->add_stored_context_infos();
-			protobuf::Stored_signal_source_info* _source 					= _pd->add_stored_source_infos();
-			protobuf::Stored_native_capability_info* cap 					= _pd->add_stored_native_cap_infos();
-			protobuf::Stored_session_info _pd_session_info					= protobuf::Stored_session_info();
-			protobuf::Stored_general_info _pd_general_info					= protobuf::Stored_general_info();
-
-			_pd_general_info.set_kcap(pd_kcap);
-			_pd_general_info.set_badge(pd_badge);
-			_pd_general_info.set_bootstrapped(pd_bootstrapped);
-			_pd_session_info.set_creation_args(pd_creation_args.string());
-                        _pd_session_info.set_upgrade_args(pd_upgrade_args.string());
-			_pd_session_info.set_allocated_general_info(&_pd_general_info);
-			_pd->set_allocated_session_info(&_pd_session_info);
-
-			protobuf::Stored_normal_info _context_normal_info                                  = protobuf::Stored_normal_info();
-                        protobuf::Stored_general_info _context_general_info                                  = protobuf::Stored_general_info();
-			_context->set_signal_source_badge(signal_source_badge);
-                        _context->set_imprint(imprint);
-			_context_general_info.set_kcap(context_kcap);
-			_context_general_info.set_badge(context_badge);
-			_context_general_info.set_bootstrapped(context_bootstrapped);
-			_context_normal_info.set_allocated_general_info(&_context_general_info);
-			_context->set_allocated_normal_info(&_context_normal_info);
-
-			protobuf::Stored_normal_info _source_normal_info                                  = protobuf::Stored_normal_info();
-                        protobuf::Stored_general_info _source_general_info                                  = protobuf::Stored_general_info();
-			_source_general_info.set_kcap(source_kcap);
-                        _source_general_info.set_badge(source_badge);
-                        _source_general_info.set_bootstrapped(source_bootstrapped);
-                        _source_normal_info.set_allocated_general_info(&_source_general_info);
-                        _source->set_allocated_normal_info(&_source_normal_info);
-
-			protobuf::Stored_normal_info cap_normal_info                                  = protobuf::Stored_normal_info();
-                        protobuf::Stored_general_info cap_general_info                                  = protobuf::Stored_general_info();
-			cap->set_signal_source_badge(ep_badge);
-			cap_general_info.set_kcap(cap_kcap);
-                        cap_general_info.set_badge(cap_badge);
-                        cap_general_info.set_bootstrapped(cap_bootstrapped);
-                        cap_normal_info.set_allocated_general_info(&cap_general_info);
-                        cap->set_allocated_normal_info(&cap_normal_info);
+			pd_session=pd_session->next();
+			_pd_counter++;
+			PDBG("Next PD Session");
+			}
 
 			PDBG("pd protofiles completed");
 
