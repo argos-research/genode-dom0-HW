@@ -23,3 +23,6 @@
 
 // Request live info as xml
 #define GET_LIVE 0x159D2
+
+// Reboot via kdb
+#define REBOOT 0x159D3
