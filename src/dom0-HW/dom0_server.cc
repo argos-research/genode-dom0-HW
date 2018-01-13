@@ -223,6 +223,7 @@ void Dom0_server::serve()
 			Genode::uint16_t attached_ds_badge						= address_space_attached_region->attached_ds_badge;
 			Genode::Ram_dataspace_capability rm_memory_content				= address_space_attached_region->memory_content;
 			Genode::size_t attached_rm_size							= address_space_attached_region->size;
+			PDBG("Attached rm size %d", attached_rm_size);
 			/* attache capability to send it over network 
 			PDBG("PIEP %d",attached_ds_badge);
 			char* rm_content;
@@ -973,29 +974,6 @@ void Dom0_server::serve()
 			
 			Rtcr::Stored_region_map_info *_pd_stored_address_space                           = new (heap) Rtcr::Stored_region_map_info(__pd_stored_address_space_kcap, __pd_stored_address_space_local_name, __pd_stored_address_space_bootstrapped, __pd_stored_address_space_size, __pd_stored_address_space_ds_badge, __pd_stored_address_space_sigh_badge);
 
-			Genode::List<Rtcr::Stored_attached_region_info> _address_space_stored_attached_region_infos   = _pd_stored_address_space->stored_attached_region_infos;
-			PDBG("%d Address Spaces found",__pd_stored_address_space.stored_attached_region_infos_size());
-			for(int k=0; k<__pd_stored_address_space.stored_attached_region_infos_size(); k++) {
-                        protobuf::Stored_attached_region_info _attached_region                          = __pd_stored_address_space.stored_attached_region_infos(k);
-                        protobuf::Stored_normal_info __attached_normal_info                             = _attached_region.normal_info();
-                        protobuf::Stored_general_info __attached_general_info                           = __attached_normal_info.general_info();
-                        Genode::addr_t __attached_kcap                                                  = __attached_general_info.kcap();
-                        Genode::uint16_t __attached_name                                                = __attached_general_info.badge();
-                        bool __attached_bootstrapped                                                    = __attached_general_info.bootstrapped();
-                        Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
-                        Genode::size_t attached_rm_size                                                 = _attached_region.size();
-                        Genode::Ram_dataspace_capability _rm_memory_content                             = Genode::env()->ram_session()->alloc(1);
-                        char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
-                        //lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
-                        
-                        Genode::off_t offset                                                            = _attached_region.offset();
-                        Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
-                        bool executable                                                                 = _attached_region.executable();
-                        
-                        Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, attached_rm_size, offset, rel_addr, executable);
-                        _address_space_stored_attached_region_infos.insert(attached_region);
-			}
-
 			protobuf::Stored_region_map_info __pd_stored_stack_area				= _pd.stored_stack_area();
 			protobuf::Stored_normal_info __pd_stored_stack_normal_info                      = __pd_stored_stack_area.normal_info();
                         protobuf::Stored_general_info __pd_stored_stack_general_info                    = __pd_stored_stack_normal_info.general_info();
@@ -1008,29 +986,6 @@ void Dom0_server::serve()
                         Genode::uint16_t __pd_stored_stack_area_sigh_badge                           	= __pd_stored_stack_area.sigh_badge();
         		
 			Rtcr::Stored_region_map_info *_pd_stored_stack_area                             = new (heap) Rtcr::Stored_region_map_info(__pd_stored_stack_kcap, __pd_stored_stack_local_name, __pd_stored_stack_bootstrapped, __pd_stored_stack_size, __pd_stored_stack_area_ds_badge, __pd_stored_stack_area_sigh_badge);
-
-			Genode::List<Rtcr::Stored_attached_region_info> _stack_area_stored_attached_region_infos   = _pd_stored_stack_area->stored_attached_region_infos;
-                        PDBG("%d Stack Areas found",__pd_stored_stack_area.stored_attached_region_infos_size());
-			for(int k=0; k<__pd_stored_stack_area.stored_attached_region_infos_size(); k++) {
-                        protobuf::Stored_attached_region_info _attached_region                          = __pd_stored_stack_area.stored_attached_region_infos(k);
-                        protobuf::Stored_normal_info __attached_normal_info                             = _attached_region.normal_info();
-                        protobuf::Stored_general_info __attached_general_info                           = __attached_normal_info.general_info();
-                        Genode::addr_t __attached_kcap                                                  = __attached_general_info.kcap();
-                        Genode::uint16_t __attached_name                                                = __attached_general_info.badge();
-                        bool __attached_bootstrapped                                                    = __attached_general_info.bootstrapped();
-                        Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
-                        Genode::size_t attached_rm_size                                                 = _attached_region.size();
-                        Genode::Ram_dataspace_capability _rm_memory_content                             = Genode::env()->ram_session()->alloc(1);
-                        char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
-                        //lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
-
-                        Genode::off_t offset                                                            = _attached_region.offset();
-                        Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
-                        bool executable                                                                 = _attached_region.executable();
-
-                        Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, attached_rm_size, offset, rel_addr, executable);
-                        _stack_area_stored_attached_region_infos.insert(attached_region);
-                        }
 
 			protobuf::Stored_region_map_info __pd_stored_linker_area			= _pd.stored_linker_area();
 			protobuf::Stored_normal_info __pd_stored_linker_normal_info                     = __pd_stored_address_space.normal_info();
@@ -1045,10 +1000,14 @@ void Dom0_server::serve()
 
 			Rtcr::Stored_region_map_info *_pd_stored_linker_area                            = new (heap) Rtcr::Stored_region_map_info(__pd_stored_linker_kcap, __pd_stored_linker_local_name, __pd_stored_linker_bootstrapped, __pd_stored_linker_size, __pd_stored_linker_area_ds_badge, __pd_stored_linker_area_sigh_badge);
 
-			Genode::List<Rtcr::Stored_attached_region_info> _linker_area_stored_attached_region_infos   = _pd_stored_linker_area->stored_attached_region_infos;
-                        PDBG("%d Linker Areas found",__pd_stored_linker_area.stored_attached_region_infos_size());
-			for(int k=0; k<__pd_stored_linker_area.stored_attached_region_infos_size(); k++) {
-                        protobuf::Stored_attached_region_info _attached_region                          = __pd_stored_linker_area.stored_attached_region_infos(k);
+			Genode::List<Rtcr::Stored_pd_session_info> *_stored_pd_sessions 			= &ts._stored_pd_sessions;
+			Rtcr::Stored_pd_session_info *pd_session 					= new (heap) Rtcr::Stored_pd_session_info(__pd_creation_args, __pd_upgrade_args, __pd_kcap, __pd_local_name, __pd_bootstrapped, _pd_stored_address_space, _pd_stored_stack_area, _pd_stored_linker_area);
+			_stored_pd_sessions->insert(pd_session);
+
+			Genode::List<Rtcr::Stored_attached_region_info> *_address_space_stored_attached_region_infos   = &pd_session->stored_address_space.stored_attached_region_infos;
+                        PDBG("%d Address Spaces found",__pd_stored_address_space.stored_attached_region_infos_size());
+                        for(int k=__pd_stored_address_space.stored_attached_region_infos_size()-1;k>=0; k--) {
+                        protobuf::Stored_attached_region_info _attached_region                          = __pd_stored_address_space.stored_attached_region_infos(k);
                         protobuf::Stored_normal_info __attached_normal_info                             = _attached_region.normal_info();
                         protobuf::Stored_general_info __attached_general_info                           = __attached_normal_info.general_info();
                         Genode::addr_t __attached_kcap                                                  = __attached_general_info.kcap();
@@ -1056,7 +1015,8 @@ void Dom0_server::serve()
                         bool __attached_bootstrapped                                                    = __attached_general_info.bootstrapped();
                         Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
                         Genode::size_t attached_rm_size                                                 = _attached_region.size();
-                        Genode::Ram_dataspace_capability _rm_memory_content                             = Genode::env()->ram_session()->alloc(1);
+			PDBG("Alloc size %d",attached_rm_size);
+                        Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(attached_rm_size);
                         char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
                         //lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
 
@@ -1065,13 +1025,57 @@ void Dom0_server::serve()
                         bool executable                                                                 = _attached_region.executable();
 
                         Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, attached_rm_size, offset, rel_addr, executable);
-                        _linker_area_stored_attached_region_infos.insert(attached_region);
+                        _address_space_stored_attached_region_infos->insert(attached_region);
                         }
 
-			Genode::List<Rtcr::Stored_pd_session_info> *_stored_pd_sessions 			= &ts._stored_pd_sessions;
-			Rtcr::Stored_pd_session_info *pd_session 					= new (heap) Rtcr::Stored_pd_session_info(__pd_creation_args, __pd_upgrade_args, __pd_kcap, __pd_local_name, __pd_bootstrapped, *_pd_stored_address_space, *_pd_stored_stack_area, *_pd_stored_linker_area);
-			_stored_pd_sessions->insert(pd_session);
-			
+                        Genode::List<Rtcr::Stored_attached_region_info> *_stack_area_stored_attached_region_infos   = &pd_session->stored_stack_area.stored_attached_region_infos;
+                        PDBG("%d Stack Areas found",__pd_stored_stack_area.stored_attached_region_infos_size());
+                        for(int k=__pd_stored_stack_area.stored_attached_region_infos_size()-1; k>=0; k--) {
+                        protobuf::Stored_attached_region_info _attached_region                          = __pd_stored_stack_area.stored_attached_region_infos(k);
+                        protobuf::Stored_normal_info __attached_normal_info                             = _attached_region.normal_info();
+                        protobuf::Stored_general_info __attached_general_info                           = __attached_normal_info.general_info();
+                        Genode::addr_t __attached_kcap                                                  = __attached_general_info.kcap();
+                        Genode::uint16_t __attached_name                                                = __attached_general_info.badge();
+                        bool __attached_bootstrapped                                                    = __attached_general_info.bootstrapped();
+                        Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
+                        Genode::size_t attached_rm_size                                                 = _attached_region.size();
+                        Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(attached_rm_size);
+                        char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
+                        //lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+
+                        Genode::off_t offset                                                            = _attached_region.offset();
+                        Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
+                        bool executable                                                                 = _attached_region.executable();
+
+                        Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, attached_rm_size, offset, rel_addr, executable);
+                        _stack_area_stored_attached_region_infos->insert(attached_region);
+                        }
+
+			Genode::List<Rtcr::Stored_attached_region_info> *_linker_area_stored_attached_region_infos   = &pd_session->stored_linker_area.stored_attached_region_infos;
+                        PDBG("%d Linker Areas found",__pd_stored_linker_area.stored_attached_region_infos_size());
+                        for(int k=__pd_stored_linker_area.stored_attached_region_infos_size()-1; k>=0; k--) {
+                        protobuf::Stored_attached_region_info _attached_region                          = __pd_stored_linker_area.stored_attached_region_infos(k);
+                        protobuf::Stored_normal_info __attached_normal_info                             = _attached_region.normal_info();
+                        protobuf::Stored_general_info __attached_general_info                           = __attached_normal_info.general_info();
+                        Genode::addr_t __attached_kcap                                                  = __attached_general_info.kcap();
+                        Genode::uint16_t __attached_name                                                = __attached_general_info.badge();
+                        bool __attached_bootstrapped                                                    = __attached_general_info.bootstrapped();
+                        Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
+                        Genode::size_t attached_rm_size                                                 = _attached_region.size();
+                        Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(attached_rm_size);
+                        char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
+                        //lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+
+                        Genode::off_t offset                                                            = _attached_region.offset();
+                        Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
+                        bool executable                                                                 = _attached_region.executable();
+
+                        Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, attached_rm_size, offset, rel_addr, executable);
+                        _linker_area_stored_attached_region_infos->insert(attached_region);
+                        }
+
+			PDBG("First attached region address space %d",pd_session->stored_address_space.stored_attached_region_infos.first()->badge);
+
 			Genode::List<Rtcr::Stored_signal_context_info>* _stored_context_infos 		= &pd_session->stored_context_infos;
 			Genode::List<Rtcr::Stored_signal_source_info>* _stored_source_infos 		= &pd_session->stored_source_infos;
 			Genode::List<Rtcr::Stored_native_capability_info>* _stored_native_cap_infos 	= &pd_session->stored_native_cap_infos;
@@ -1137,7 +1141,7 @@ void Dom0_server::serve()
 			Genode::List<Rtcr::Stored_cpu_thread_info>* stored_cpu_thread_infos              = &cpu_session->stored_cpu_thread_infos;
 
 			PDBG("%d CPU Threads found", _cpu_session.stored_cpu_thread_infos_size());
-			for(int j=0;j<_cpu_session.stored_cpu_thread_infos_size();j++) {
+			for(int j=_cpu_session.stored_cpu_thread_infos_size()-1;j>=0;j--) {
                         protobuf::Stored_cpu_thread_info _cpu_thread                                    = _cpu_session.stored_cpu_thread_infos(j);
 			protobuf::Stored_normal_info __cpu_normal_info					= _cpu_thread.normal_info();
 			protobuf::Stored_general_info __cpu_general_info				= __cpu_normal_info.general_info();
@@ -1179,7 +1183,7 @@ void Dom0_server::serve()
 			Genode::List<Rtcr::Stored_ram_dataspace_info>* stored_ramds_infos                = &ram_session->stored_ramds_infos;
 
 			PDBG("%d RAM Dataspaces found", _ram_session.stored_ramds_infos_size());
-			for(int j=0; j<_ram_session.stored_ramds_infos_size(); j++) {
+			for(int j=_ram_session.stored_ramds_infos_size()-1;j>=0; j--) {
                         protobuf::Stored_ram_dataspace_info _ramds                                      = _ram_session.stored_ramds_infos(j);
 			protobuf::Stored_normal_info __ramds_normal_info				= _ramds.normal_info();
 			protobuf::Stored_general_info __ramds_general_info				= __ramds_normal_info.general_info();
@@ -1242,7 +1246,7 @@ void Dom0_server::serve()
                         
 			Genode::List<Rtcr::Stored_region_map_info>* _stored_region_map_infos             = &rm_session->stored_region_map_infos;
 			
-			for(int j=0; j<_rm_session.stored_region_map_infos_size(); j++) {
+			for(int j=_rm_session.stored_region_map_infos_size()-1;j>=0; j--) {
 			protobuf::Stored_region_map_info _region_map                              	= _rm_session.stored_region_map_infos(j);
 			protobuf::Stored_normal_info __region_map_normal_info				= _region_map.normal_info();
 			protobuf::Stored_general_info __region_map_general_info				= __region_map_normal_info.general_info();
@@ -1255,9 +1259,9 @@ void Dom0_server::serve()
 			Rtcr::Stored_region_map_info *region_map                                         = new (heap) Rtcr::Stored_region_map_info(__region_map_kcap, __region_map_name, __region_map_bootstrapped, rm_size, ds_badge, rm_sigh_badge);
 			_stored_region_map_infos->insert(region_map);
 
-			Genode::List<Rtcr::Stored_attached_region_info> _stored_attached_region_infos   = region_map->stored_attached_region_infos;
+			Genode::List<Rtcr::Stored_attached_region_info>* _stored_attached_region_infos   = &region_map->stored_attached_region_infos;
 
-			for(int k=0; k<_region_map.stored_attached_region_infos_size(); k++) {
+			for(int k=_region_map.stored_attached_region_infos_size()-1;k>=0; k--) {
                         protobuf::Stored_attached_region_info _attached_region                    	= _region_map.stored_attached_region_infos(k);
 			protobuf::Stored_normal_info __attached_normal_info				= _attached_region.normal_info();
 			protobuf::Stored_general_info __attached_general_info				= __attached_normal_info.general_info();
@@ -1275,7 +1279,7 @@ void Dom0_server::serve()
                         bool executable                                                                 = _attached_region.executable();
                         
                         Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, rm_size, offset, rel_addr, executable);
-			_stored_attached_region_infos.insert(attached_region);
+			_stored_attached_region_infos->insert(attached_region);
 			
 			}
 
