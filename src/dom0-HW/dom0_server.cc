@@ -1,5 +1,5 @@
 #include "dom0_server.h"
-
+#include <base/sleep.h>
 /* etc */
 #include <cstdio>
 #include <cstring>
@@ -141,6 +141,14 @@ void Dom0_server::serve()
 			Rtcr::Target_state ts(_env, heap);
 			Rtcr::Checkpointer ckpt(heap, child, ts);
 			ckpt.checkpoint();
+			
+			/*
+			Rtcr::Target_child child_restored { _env, heap, parent_services, "sheep_counter", 0 };
+			Rtcr::Restorer resto(heap, child_restored, ts);
+                        child_restored.start(resto);
+			Genode::sleep_forever();
+			*/
+
 			protobuf::Target_state _ts = protobuf::Target_state();
 
 			/* PD Session */
@@ -203,10 +211,10 @@ void Dom0_server::serve()
 			_pd_normal_info[_pd_normal_info_counter]                                 	= protobuf::Stored_normal_info();
                         _pd_general_info[_pd_general_info_counter]                                 	= protobuf::Stored_general_info();
 			_pd_general_info[_pd_general_info_counter].set_kcap(stored_address_space_kcap);
-                        _pd_general_info[_pd_general_info_counter].set_badge(stored_address_space_ds_badge);
+                        _pd_general_info[_pd_general_info_counter].set_badge(stored_address_space_badge);
                         _pd_general_info[_pd_general_info_counter].set_bootstrapped(stored_address_space_bootstrapped);
 			_stored_address_space[_pd_counter].set_size(stored_address_space_size);
-			_stored_address_space[_pd_counter].set_ds_badge(stored_address_space_badge);
+			_stored_address_space[_pd_counter].set_ds_badge(stored_address_space_ds_badge);
 			_stored_address_space[_pd_counter].set_sigh_badge(stored_address_space_sigh_badge);
 			_pd_normal_info[_pd_normal_info_counter].set_allocated_general_info(&_pd_general_info[_pd_general_info_counter]);
                         _stored_address_space[_pd_counter].set_allocated_normal_info(&_pd_normal_info[_pd_normal_info_counter]);
@@ -287,10 +295,10 @@ void Dom0_server::serve()
 			_pd_normal_info[_pd_normal_info_counter]                                 	= protobuf::Stored_normal_info();
                         _pd_general_info[_pd_general_info_counter]                                 	= protobuf::Stored_general_info();
 			_pd_general_info[_pd_general_info_counter].set_kcap(stored_stack_area_kcap);
-                        _pd_general_info[_pd_general_info_counter].set_badge(stored_stack_area_ds_badge);
+                        _pd_general_info[_pd_general_info_counter].set_badge(stored_stack_area_badge);
                         _pd_general_info[_pd_general_info_counter].set_bootstrapped(stored_stack_area_bootstrapped);
 			_stored_stack_area[_pd_counter].set_size(stored_stack_area_size);
-			_stored_stack_area[_pd_counter].set_ds_badge(stored_stack_area_badge);
+			_stored_stack_area[_pd_counter].set_ds_badge(stored_stack_area_ds_badge);
 			_stored_stack_area[_pd_counter].set_sigh_badge(stored_stack_area_sigh_badge);
 			_pd_normal_info[_pd_normal_info_counter].set_allocated_general_info(&_pd_general_info[_pd_general_info_counter]);
                         _stored_stack_area[_pd_counter].set_allocated_normal_info(&_pd_normal_info[_pd_normal_info_counter]);
@@ -358,10 +366,10 @@ void Dom0_server::serve()
 			_pd_normal_info[_pd_normal_info_counter]                                 	= protobuf::Stored_normal_info();
                         _pd_general_info[_pd_general_info_counter]                                 	= protobuf::Stored_general_info();
 			_pd_general_info[_pd_general_info_counter].set_kcap(stored_linker_area_kcap);
-                        _pd_general_info[_pd_general_info_counter].set_badge(stored_linker_area_ds_badge);
+                        _pd_general_info[_pd_general_info_counter].set_badge(stored_linker_area_badge);
                         _pd_general_info[_pd_general_info_counter].set_bootstrapped(stored_linker_area_bootstrapped);
 			_stored_linker_area[_pd_counter].set_size(stored_linker_area_size);
-			_stored_linker_area[_pd_counter].set_ds_badge(stored_linker_area_badge);
+			_stored_linker_area[_pd_counter].set_ds_badge(stored_linker_area_ds_badge);
 			_stored_linker_area[_pd_counter].set_sigh_badge(stored_linker_area_sigh_badge);
 			_pd_normal_info[_pd_normal_info_counter].set_allocated_general_info(&_pd_general_info[_pd_general_info_counter]);
                         _stored_linker_area[_pd_counter].set_allocated_normal_info(&_pd_normal_info[_pd_normal_info_counter]);
@@ -1021,7 +1029,7 @@ void Dom0_server::serve()
                         //lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
 
                         Genode::off_t offset                                                            = _attached_region.offset();
-                        Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
+			Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
                         bool executable                                                                 = _attached_region.executable();
 
                         Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, attached_rm_size, offset, rel_addr, executable);
