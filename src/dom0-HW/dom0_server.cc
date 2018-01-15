@@ -130,8 +130,11 @@ void Dom0_server::serve()
 		NETCHECK_LOOP(receiveInt32_t(message));
 		if (message == CHECKPOINT)
 		{
+			//char *bar;
 			Timer::Connection timer { _env };
-			Genode::Heap              heap            { _env.ram(), _env.rm() };
+			Genode::Heap              heap            { _env.ram(), _env.rm()};
+			//bar=_env.rm().attach(_env.pd().address_space().dataspace());
+			//PDBG("Address Space Address: %p", bar);
 			Genode::Service_registry  parent_services { };
 			Rtcr::Target_child child { _env, heap, parent_services, "sheep_counter", 0 };
 			child.start();
@@ -150,6 +153,8 @@ void Dom0_server::serve()
 			*/
 
 			protobuf::Target_state _ts = protobuf::Target_state();
+
+			_ts.set__cap_idx_alloc_addr(ts._cap_idx_alloc_addr);
 
 			/* PD Session */
 			protobuf::Stored_pd_session_info* _pd[10];
@@ -231,31 +236,28 @@ void Dom0_server::serve()
 			Genode::uint16_t attached_ds_badge						= address_space_attached_region->attached_ds_badge;
 			Genode::Ram_dataspace_capability rm_memory_content				= address_space_attached_region->memory_content;
 			Genode::size_t attached_rm_size							= address_space_attached_region->size;
+			Genode::off_t offset                                                            = address_space_attached_region->offset;
+                        Genode::addr_t rel_addr                                                         = address_space_attached_region->rel_addr;
+                        bool executable                                                                 = address_space_attached_region->executable;
 			PDBG("Attached rm size %d", attached_rm_size);
-			/* attache capability to send it over network 
-			PDBG("PIEP %d",attached_ds_badge);
+			/* attache capability to send it over network */
+			PDBG("Badge %d",attached_ds_badge);
 			char* rm_content;
-			try{
-					rm_content							= (char*)Genode::env()->rm_session()->attach(rm_memory_content);
-			}catch(...){}
-			PDBG("PIEPPIEP");
-			
+			rm_content							= (char*)rel_addr;//(char*)_env.rm().attach(rm_memory_content);
+			PDBG("Read from address: %p",rm_content);
+			/*
 			int32_t read=0;
 			lwip_read(_target_socket,&read,4);
 			if(read==CHECKPOINT) {
 			PDBG("Send dataspace");
 			int32_t message=REGION_MAP;
 			lwip_write(_target_socket,&message,4);
-        		lwip_write(_target_socket,&attached_rm_size,4);
-			lwip_write(_target_socket,rm_content,attached_rm_size);
-			}
 			*/
+        		//lwip_write(_target_socket,&attached_rm_size,4);
+			//lwip_write(_target_socket,rm_content,1);
+			
 			//Genode::env()->rm_session()->detach(rm_content);
 			
-			Genode::off_t offset								= address_space_attached_region->offset;
-			Genode::addr_t rel_addr								= address_space_attached_region->rel_addr;
-			bool executable									= address_space_attached_region->executable;
-
 			Genode::addr_t   attached_kcap                                                        = address_space_attached_region->kcap;
                         Genode::uint16_t attached_badge                                                       = address_space_attached_region->badge;
                         bool             attached_bootstrapped                                                = address_space_attached_region->bootstrapped;
@@ -937,8 +939,11 @@ void Dom0_server::serve()
 		}
 		else if (message == RESTORE)
 		{
+			//try {
+                        //_env.rm().detach(4096);
+                        //} catch(...) {PDBG("Unable to detach");}
 			Genode::Heap              heap            { _env.ram(), _env.rm() };
-			Genode::Heap              _heap            { _env.ram(), _env.rm() };
+			//Genode::Heap              _heap            { _env.ram(), _env.rm() };
 			Genode::Service_registry  parent_services { };
 			Rtcr::Target_child child_restored { _env, heap, parent_services, "sheep_counter", 0 };
 			Rtcr::Target_state ts(_env, heap);
@@ -954,6 +959,8 @@ void Dom0_server::serve()
 			lwip_read(_target_socket, bar, ntohl(size));
 			_ts.ParseFromArray(bar,ntohl(size));
 	
+			ts._cap_idx_alloc_addr=_ts._cap_idx_alloc_addr();
+
 			/* PD Session */
 			Genode::List<Rtcr::Stored_pd_session_info> __stored_pd_sessions;
 			/* protobuf */
@@ -977,7 +984,7 @@ void Dom0_server::serve()
                         bool __pd_stored_address_space_bootstrapped					= __pd_stored_address_general_info.bootstrapped();
                         Genode::size_t __pd_stored_address_space_size					= __pd_stored_address_space.size();
                         Genode::uint16_t __pd_stored_address_space_ds_badge				= __pd_stored_address_space.ds_badge();
-			PDBG("address space %d",__pd_stored_address_space_ds_badge);
+			PDBG("address space %d",__pd_stored_address_space_local_name);
                         Genode::uint16_t __pd_stored_address_space_sigh_badge				= __pd_stored_address_space.sigh_badge();
 			
 			Rtcr::Stored_region_map_info *_pd_stored_address_space                           = new (heap) Rtcr::Stored_region_map_info(__pd_stored_address_space_kcap, __pd_stored_address_space_local_name, __pd_stored_address_space_bootstrapped, __pd_stored_address_space_size, __pd_stored_address_space_ds_badge, __pd_stored_address_space_sigh_badge);
@@ -990,20 +997,20 @@ void Dom0_server::serve()
                         bool __pd_stored_stack_bootstrapped                                     	= __pd_stored_stack_general_info.bootstrapped();
                         Genode::size_t __pd_stored_stack_size                                   	= __pd_stored_stack_area.size();
                         Genode::uint16_t __pd_stored_stack_area_ds_badge                             	= __pd_stored_stack_area.ds_badge();
-			PDBG("stack area %d",__pd_stored_stack_area_ds_badge);
+			PDBG("stack area %d",__pd_stored_stack_local_name);
                         Genode::uint16_t __pd_stored_stack_area_sigh_badge                           	= __pd_stored_stack_area.sigh_badge();
         		
 			Rtcr::Stored_region_map_info *_pd_stored_stack_area                             = new (heap) Rtcr::Stored_region_map_info(__pd_stored_stack_kcap, __pd_stored_stack_local_name, __pd_stored_stack_bootstrapped, __pd_stored_stack_size, __pd_stored_stack_area_ds_badge, __pd_stored_stack_area_sigh_badge);
 
 			protobuf::Stored_region_map_info __pd_stored_linker_area			= _pd.stored_linker_area();
-			protobuf::Stored_normal_info __pd_stored_linker_normal_info                     = __pd_stored_address_space.normal_info();
+			protobuf::Stored_normal_info __pd_stored_linker_normal_info                     = __pd_stored_linker_area.normal_info();
                         protobuf::Stored_general_info __pd_stored_linker_general_info                   = __pd_stored_linker_normal_info.general_info();
                         Genode::addr_t __pd_stored_linker_kcap                                   	= __pd_stored_linker_general_info.kcap();
                         Genode::uint16_t __pd_stored_linker_local_name                           	= __pd_stored_linker_general_info.badge();
                         bool __pd_stored_linker_bootstrapped                                     	= __pd_stored_linker_general_info.bootstrapped();
                         Genode::size_t __pd_stored_linker_size                                   	= __pd_stored_linker_area.size();
                         Genode::uint16_t __pd_stored_linker_area_ds_badge                             	= __pd_stored_linker_area.ds_badge();
-			PDBG("linker_area %d",__pd_stored_linker_area_ds_badge);
+			PDBG("linker_area %d",__pd_stored_linker_local_name);
                         Genode::uint16_t __pd_stored_linker_area_sigh_badge                           	= __pd_stored_linker_area.sigh_badge();
 
 			Rtcr::Stored_region_map_info *_pd_stored_linker_area                            = new (heap) Rtcr::Stored_region_map_info(__pd_stored_linker_kcap, __pd_stored_linker_local_name, __pd_stored_linker_bootstrapped, __pd_stored_linker_size, __pd_stored_linker_area_ds_badge, __pd_stored_linker_area_sigh_badge);
@@ -1023,18 +1030,37 @@ void Dom0_server::serve()
                         bool __attached_bootstrapped                                                    = __attached_general_info.bootstrapped();
                         Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
                         Genode::size_t attached_rm_size                                                 = _attached_region.size();
-			PDBG("Alloc size %d",attached_rm_size);
-                        Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(attached_rm_size);
-                        char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
-                        //lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
-
-                        Genode::off_t offset                                                            = _attached_region.offset();
-			Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
+			Genode::off_t offset                                                            = _attached_region.offset();
+                        Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
                         bool executable                                                                 = _attached_region.executable();
+			PDBG("Alloc size %d",attached_rm_size);
+			PDBG("Attach at %d", rel_addr);
+			//try {
+			//_env.rm().detach(rel_addr);
+			//} catch(...) {PDBG("Unable to detach");}
+                        Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(attached_rm_size);
+			//if(rel_addr==17031168) {
+                        try {
+			char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content, attached_rm_size, 0,
+                                true, rel_addr, executable);
+                        }catch(...)
+			{
+				PDBG("Unable to attach. Detach and try again.");
+				//try {
+                        	//_env.rm().detach(16777216);
+                        	//} catch(...) {PDBG("Unable to detach");}
+				//try {
+                        	//	char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content, attached_rm_size, 0,
+                                //		true, rel_addr, executable);
+                        	//}catch(...) {PDBG("Still unable to attach"); }
+			}
+
+			//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
 
                         Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, attached_rm_size, offset, rel_addr, executable);
                         _address_space_stored_attached_region_infos->insert(attached_region);
                         }
+			//}
 
                         Genode::List<Rtcr::Stored_attached_region_info> *_stack_area_stored_attached_region_infos   = &pd_session->stored_stack_area.stored_attached_region_infos;
                         PDBG("%d Stack Areas found",__pd_stored_stack_area.stored_attached_region_infos_size());
@@ -1047,8 +1073,8 @@ void Dom0_server::serve()
                         bool __attached_bootstrapped                                                    = __attached_general_info.bootstrapped();
                         Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
                         Genode::size_t attached_rm_size                                                 = _attached_region.size();
-                        Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(attached_rm_size);
-                        char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
+                        Genode::Ram_dataspace_capability _rm_memory_content                             ;//= _env.ram().alloc(attached_rm_size);
+                        //char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
                         //lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
 
                         Genode::off_t offset                                                            = _attached_region.offset();
@@ -1070,8 +1096,8 @@ void Dom0_server::serve()
                         bool __attached_bootstrapped                                                    = __attached_general_info.bootstrapped();
                         Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
                         Genode::size_t attached_rm_size                                                 = _attached_region.size();
-                        Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(attached_rm_size);
-                        char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
+                        Genode::Ram_dataspace_capability _rm_memory_content                             ;//= _env.ram().alloc(attached_rm_size);
+                        //char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
                         //lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
 
                         Genode::off_t offset                                                            = _attached_region.offset();
