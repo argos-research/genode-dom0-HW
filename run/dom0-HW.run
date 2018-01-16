@@ -63,14 +63,14 @@ set config {
         	<provides><service name="utilization"/></provides>
         </start>
 	<start name="dom0-HW">
-		<resource name="RAM" quantum="10M"/>
+		<resource name="RAM" quantum="40M"/>
 		<provides><service name="dom0"/></provides>
 		<config>
 			<network dhcp="yes" ip-address="10.200.40.10" subnet-mask="255.255.255.0" default-gateway="10.200.40.1" port="3001"/>
 		</config>
 	</start>
 	<start name="taskloader">
-		<resource name="RAM" quantum="40M"/>
+		<resource name="RAM" quantum="50M"/>
 		<provides><service name="taskloader"/></provides>
 		<config>
 			<trace quota="10M" buf-size="1M"/>
