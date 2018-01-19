@@ -640,182 +640,151 @@ void Dom0_server::serve()
 			ts._cap_idx_alloc_addr=_ts._cap_idx_alloc_addr();
 
 			/* PD Session */
-			Genode::List<Rtcr::Stored_pd_session_info> __stored_pd_sessions;
 			/* protobuf */
 			PDBG("%d PD Sessions found",_ts._stored_pd_sessions_size());
 			for(int i=0;i<_ts._stored_pd_sessions_size();i++){
-			protobuf::Stored_pd_session_info _pd 						= _ts._stored_pd_sessions(i);
-			protobuf::Stored_session_info __pd_session_info					= _pd.session_info();
-			protobuf::Stored_general_info __pd_general_info					= __pd_session_info.general_info();
-
-			const char* __pd_creation_args							= __pd_session_info.creation_args().c_str();
-                        const char* __pd_upgrade_args							= __pd_session_info.upgrade_args().c_str();
-                        Genode::addr_t __pd_kcap							= __pd_general_info.kcap();
-                        Genode::uint16_t __pd_local_name						= __pd_general_info.badge();
-                        bool __pd_bootstrapped								= __pd_general_info.bootstrapped();
-
-			protobuf::Stored_region_map_info __pd_stored_address_space			= _pd.stored_address_space();
-			protobuf::Stored_normal_info __pd_stored_address_normal_info			= __pd_stored_address_space.normal_info();
-			protobuf::Stored_general_info __pd_stored_address_general_info			= __pd_stored_address_normal_info.general_info();
-			Genode::addr_t __pd_stored_address_space_kcap					= __pd_stored_address_general_info.kcap();
-                        Genode::uint16_t __pd_stored_address_space_local_name				= __pd_stored_address_general_info.badge();
-                        bool __pd_stored_address_space_bootstrapped					= __pd_stored_address_general_info.bootstrapped();
-                        Genode::size_t __pd_stored_address_space_size					= __pd_stored_address_space.size();
-                        Genode::uint16_t __pd_stored_address_space_ds_badge				= __pd_stored_address_space.ds_badge();
-			PDBG("address space %d",__pd_stored_address_space_kcap);
-                        Genode::uint16_t __pd_stored_address_space_sigh_badge				= __pd_stored_address_space.sigh_badge();
+				protobuf::Stored_pd_session_info _pd 				= _ts._stored_pd_sessions(i);
 			
-			Rtcr::Stored_region_map_info *_pd_stored_address_space                           = new (heap) Rtcr::Stored_region_map_info(__pd_stored_address_space_kcap, __pd_stored_address_space_local_name, __pd_stored_address_space_bootstrapped, __pd_stored_address_space_size, __pd_stored_address_space_ds_badge, __pd_stored_address_space_sigh_badge);
-
-			protobuf::Stored_region_map_info __pd_stored_stack_area				= _pd.stored_stack_area();
-			protobuf::Stored_normal_info __pd_stored_stack_normal_info                      = __pd_stored_stack_area.normal_info();
-                        protobuf::Stored_general_info __pd_stored_stack_general_info                    = __pd_stored_stack_normal_info.general_info();
-                        Genode::addr_t __pd_stored_stack_kcap                                   	= __pd_stored_stack_general_info.kcap();
-                        Genode::uint16_t __pd_stored_stack_local_name                           	= __pd_stored_stack_general_info.badge();
-                        bool __pd_stored_stack_bootstrapped                                     	= __pd_stored_stack_general_info.bootstrapped();
-                        Genode::size_t __pd_stored_stack_size                                   	= __pd_stored_stack_area.size();
-                        Genode::uint16_t __pd_stored_stack_area_ds_badge                             	= __pd_stored_stack_area.ds_badge();
-			PDBG("stack area %d",__pd_stored_stack_kcap);
-                        Genode::uint16_t __pd_stored_stack_area_sigh_badge                           	= __pd_stored_stack_area.sigh_badge();
+				Rtcr::Stored_region_map_info *_pd_stored_address_space		= new (heap) Rtcr::Stored_region_map_info(
+												_pd.stored_address_space().normal_info().general_info().kcap(),
+												_pd.stored_address_space().normal_info().general_info().badge(),
+												_pd.stored_address_space().normal_info().general_info().bootstrapped(),
+												_pd.stored_address_space().size(),
+												_pd.stored_address_space().ds_badge(),
+												_pd.stored_address_space().sigh_badge());
         		
-			Rtcr::Stored_region_map_info *_pd_stored_stack_area                             = new (heap) Rtcr::Stored_region_map_info(__pd_stored_stack_kcap, __pd_stored_stack_local_name, __pd_stored_stack_bootstrapped, __pd_stored_stack_size, __pd_stored_stack_area_ds_badge, __pd_stored_stack_area_sigh_badge);
+				Rtcr::Stored_region_map_info *_pd_stored_stack_area  		= new (heap) Rtcr::Stored_region_map_info(
+												_pd.stored_stack_area().normal_info().general_info().kcap(),
+												_pd.stored_stack_area().normal_info().general_info().badge(),
+												_pd.stored_stack_area().normal_info().general_info().bootstrapped(),
+												_pd.stored_stack_area().size(),
+												_pd.stored_stack_area().ds_badge(),
+												_pd.stored_stack_area().sigh_badge());
 
-			protobuf::Stored_region_map_info __pd_stored_linker_area			= _pd.stored_linker_area();
-			protobuf::Stored_normal_info __pd_stored_linker_normal_info                     = __pd_stored_linker_area.normal_info();
-                        protobuf::Stored_general_info __pd_stored_linker_general_info                   = __pd_stored_linker_normal_info.general_info();
-                        Genode::addr_t __pd_stored_linker_kcap                                   	= __pd_stored_linker_general_info.kcap();
-                        Genode::uint16_t __pd_stored_linker_local_name                           	= __pd_stored_linker_general_info.badge();
-                        bool __pd_stored_linker_bootstrapped                                     	= __pd_stored_linker_general_info.bootstrapped();
-                        Genode::size_t __pd_stored_linker_size                                   	= __pd_stored_linker_area.size();
-                        Genode::uint16_t __pd_stored_linker_area_ds_badge                             	= __pd_stored_linker_area.ds_badge();
-			PDBG("linker_area %d",__pd_stored_linker_kcap);
-                        Genode::uint16_t __pd_stored_linker_area_sigh_badge                           	= __pd_stored_linker_area.sigh_badge();
+				Rtcr::Stored_region_map_info *_pd_stored_linker_area 		= new (heap) Rtcr::Stored_region_map_info(
+												_pd.stored_linker_area().normal_info().general_info().kcap(),
+												_pd.stored_linker_area().normal_info().general_info().badge(),
+												_pd.stored_linker_area().normal_info().general_info().bootstrapped(),
+												_pd.stored_linker_area().size(),
+												_pd.stored_linker_area().ds_badge(),
+												_pd.stored_linker_area().sigh_badge());
 
-			Rtcr::Stored_region_map_info *_pd_stored_linker_area                            = new (heap) Rtcr::Stored_region_map_info(__pd_stored_linker_kcap, __pd_stored_linker_local_name, __pd_stored_linker_bootstrapped, __pd_stored_linker_size, __pd_stored_linker_area_ds_badge, __pd_stored_linker_area_sigh_badge);
+				Genode::List<Rtcr::Stored_pd_session_info> *_stored_pd_sessions = &ts._stored_pd_sessions;
+				Rtcr::Stored_pd_session_info *pd_session 			= new (heap) Rtcr::Stored_pd_session_info(
+												_pd.session_info().creation_args().c_str(),
+												_pd.session_info().upgrade_args().c_str(),
+												_pd.session_info().general_info().kcap(),
+												_pd.session_info().general_info().badge(),
+												_pd.session_info().general_info().bootstrapped(),
+												_pd_stored_address_space,
+												_pd_stored_stack_area,
+												_pd_stored_linker_area);
+				_stored_pd_sessions->insert(pd_session);
 
-			Genode::List<Rtcr::Stored_pd_session_info> *_stored_pd_sessions 			= &ts._stored_pd_sessions;
-			Rtcr::Stored_pd_session_info *pd_session 					= new (heap) Rtcr::Stored_pd_session_info(__pd_creation_args, __pd_upgrade_args, __pd_kcap, __pd_local_name, __pd_bootstrapped, _pd_stored_address_space, _pd_stored_stack_area, _pd_stored_linker_area);
-			_stored_pd_sessions->insert(pd_session);
+				Genode::List<Rtcr::Stored_attached_region_info> *_address_space_stored_attached_region_infos   = &pd_session->stored_address_space.stored_attached_region_infos;
+                        
+				for(int k=_pd.stored_address_space().stored_attached_region_infos_size()-1;k>=0; k--) {
+                        		protobuf::Stored_attached_region_info _attached_region                          = _pd.stored_address_space().stored_attached_region_infos(k);
 
-			PDBG("address space kcap %d",pd_session->stored_address_space.kcap);
+                        		Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(_attached_region.size());
+					char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
 
-			Genode::List<Rtcr::Stored_attached_region_info> *_address_space_stored_attached_region_infos   = &pd_session->stored_address_space.stored_attached_region_infos;
-                        PDBG("%d Address Spaces found",__pd_stored_address_space.stored_attached_region_infos_size());
-                        for(int k=__pd_stored_address_space.stored_attached_region_infos_size()-1;k>=0; k--) {
-                        protobuf::Stored_attached_region_info _attached_region                          = __pd_stored_address_space.stored_attached_region_infos(k);
-                        protobuf::Stored_normal_info __attached_normal_info                             = _attached_region.normal_info();
-                        protobuf::Stored_general_info __attached_general_info                           = __attached_normal_info.general_info();
-                        Genode::addr_t __attached_kcap                                                  = __attached_general_info.kcap();
-                        Genode::uint16_t __attached_name                                                = __attached_general_info.badge();
-                        bool __attached_bootstrapped                                                    = __attached_general_info.bootstrapped();
-                        Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
-                        Genode::size_t attached_rm_size                                                 = _attached_region.size();
-			Genode::off_t offset                                                            = _attached_region.offset();
-                        Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
-                        bool executable                                                                 = _attached_region.executable();
-			PDBG("Alloc size %d",attached_rm_size);
-			PDBG("Attach at %d", rel_addr);
+					//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
 
-                        Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(attached_rm_size);
-			char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
+                        		Rtcr::Stored_attached_region_info *attached_region	= new (heap) Rtcr::Stored_attached_region_info(
+												_attached_region.normal_info().general_info().kcap(),
+												_attached_region.normal_info().general_info().badge(),
+												_attached_region.normal_info().general_info().bootstrapped(),
+												_attached_region.attached_ds_badge(),
+												_rm_memory_content,
+												_attached_region.size(),
+												_attached_region.offset(),
+												_attached_region.rel_addr(),
+												_attached_region.executable());
+                        		_address_space_stored_attached_region_infos->insert(attached_region);
+                        	}
 
-			//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+                        	Genode::List<Rtcr::Stored_attached_region_info> *_stack_area_stored_attached_region_infos   = &pd_session->stored_stack_area.stored_attached_region_infos;
 
-                        Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, attached_rm_size, offset, rel_addr, executable);
-                        _address_space_stored_attached_region_infos->insert(attached_region);
-                        }
-			//}
+                        	for(int k=_pd.stored_stack_area().stored_attached_region_infos_size()-1; k>=0; k--) {
+                        		protobuf::Stored_attached_region_info _attached_region                          = _pd.stored_stack_area().stored_attached_region_infos(k);
+                        
+					Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(_attached_region.size());
+					char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
 
-                        Genode::List<Rtcr::Stored_attached_region_info> *_stack_area_stored_attached_region_infos   = &pd_session->stored_stack_area.stored_attached_region_infos;
-                        PDBG("%d Stack Areas found",__pd_stored_stack_area.stored_attached_region_infos_size());
-                        for(int k=__pd_stored_stack_area.stored_attached_region_infos_size()-1; k>=0; k--) {
-                        protobuf::Stored_attached_region_info _attached_region                          = __pd_stored_stack_area.stored_attached_region_infos(k);
-                        protobuf::Stored_normal_info __attached_normal_info                             = _attached_region.normal_info();
-                        protobuf::Stored_general_info __attached_general_info                           = __attached_normal_info.general_info();
-                        Genode::addr_t __attached_kcap                                                  = __attached_general_info.kcap();
-                        Genode::uint16_t __attached_name                                                = __attached_general_info.badge();
-                        bool __attached_bootstrapped                                                    = __attached_general_info.bootstrapped();
-                        Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
-                        Genode::size_t attached_rm_size                                                 = _attached_region.size();
-                        Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(attached_rm_size);
-                        char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
-                        //lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+					//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
 
-                        Genode::off_t offset                                                            = _attached_region.offset();
-                        Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
-                        bool executable                                                                 = _attached_region.executable();
+                        		Rtcr::Stored_attached_region_info *attached_region	= new (heap) Rtcr::Stored_attached_region_info(
+												_attached_region.normal_info().general_info().kcap(),
+												_attached_region.normal_info().general_info().badge(),
+												_attached_region.normal_info().general_info().bootstrapped(),
+												_attached_region.attached_ds_badge(),
+												_rm_memory_content,
+												_attached_region.size(),
+												_attached_region.offset(),
+												_attached_region.rel_addr(),
+												_attached_region.executable());
 
-                        Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, attached_rm_size, offset, rel_addr, executable);
-                        _stack_area_stored_attached_region_infos->insert(attached_region);
-                        }
+                        		_stack_area_stored_attached_region_infos->insert(attached_region);
+                       		}
 
-			Genode::List<Rtcr::Stored_attached_region_info> *_linker_area_stored_attached_region_infos   = &pd_session->stored_linker_area.stored_attached_region_infos;
-                        PDBG("%d Linker Areas found",__pd_stored_linker_area.stored_attached_region_infos_size());
-                        for(int k=__pd_stored_linker_area.stored_attached_region_infos_size()-1; k>=0; k--) {
-                        protobuf::Stored_attached_region_info _attached_region                          = __pd_stored_linker_area.stored_attached_region_infos(k);
-                        protobuf::Stored_normal_info __attached_normal_info                             = _attached_region.normal_info();
-                        protobuf::Stored_general_info __attached_general_info                           = __attached_normal_info.general_info();
-                        Genode::addr_t __attached_kcap                                                  = __attached_general_info.kcap();
-                        Genode::uint16_t __attached_name                                                = __attached_general_info.badge();
-                        bool __attached_bootstrapped                                                    = __attached_general_info.bootstrapped();
-                        Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
-                        Genode::size_t attached_rm_size                                                 = _attached_region.size();
-                        Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(attached_rm_size);
-                        char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
-                        //lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+				Genode::List<Rtcr::Stored_attached_region_info> *_linker_area_stored_attached_region_infos   = &pd_session->stored_linker_area.stored_attached_region_infos;
+                        
+                        	for(int k=_pd.stored_linker_area().stored_attached_region_infos_size()-1; k>=0; k--) {
+                       			protobuf::Stored_attached_region_info _attached_region                          = _pd.stored_linker_area().stored_attached_region_infos(k);
+                        
+					Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(_attached_region.size());
+					char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
 
-                        Genode::off_t offset                                                            = _attached_region.offset();
-                        Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
-                        bool executable                                                                 = _attached_region.executable();
+					//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
 
-                        Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, attached_rm_size, offset, rel_addr, executable);
-                        _linker_area_stored_attached_region_infos->insert(attached_region);
-                        }
+                        		Rtcr::Stored_attached_region_info *attached_region	= new (heap) Rtcr::Stored_attached_region_info(
+												_attached_region.normal_info().general_info().kcap(),
+												_attached_region.normal_info().general_info().badge(),
+												_attached_region.normal_info().general_info().bootstrapped(),
+												_attached_region.attached_ds_badge(),
+												_rm_memory_content,
+												_attached_region.size(),
+												_attached_region.offset(),
+												_attached_region.rel_addr(),
+												_attached_region.executable());
 
-			PDBG("First attached region address space %d",pd_session->stored_address_space.stored_attached_region_infos.first()->badge);
+                        		_linker_area_stored_attached_region_infos->insert(attached_region);
+                        	}
 
-			Genode::List<Rtcr::Stored_signal_context_info>* _stored_context_infos 		= &pd_session->stored_context_infos;
-			Genode::List<Rtcr::Stored_signal_source_info>* _stored_source_infos 		= &pd_session->stored_source_infos;
-			Genode::List<Rtcr::Stored_native_capability_info>* _stored_native_cap_infos 	= &pd_session->stored_native_cap_infos;
+				Genode::List<Rtcr::Stored_signal_context_info>* _stored_context_infos 		= &pd_session->stored_context_infos;
+				Genode::List<Rtcr::Stored_signal_source_info>* _stored_source_infos 		= &pd_session->stored_source_infos;
+				Genode::List<Rtcr::Stored_native_capability_info>* _stored_native_cap_infos 	= &pd_session->stored_native_cap_infos;
 
-			PDBG("%d Context Infos found",_pd.stored_context_infos_size());
-			for(int j=0;j<_pd.stored_context_infos_size(); j++){
-			protobuf::Stored_signal_context_info _context					= _pd.stored_context_infos(j);
-			protobuf::Stored_normal_info _context_normal_info				= _context.normal_info();
-			protobuf::Stored_general_info _context_general_info				= _context_normal_info.general_info();
-			Genode::addr_t _context_kcap                                          		= _context_general_info.kcap();
-                        Genode::uint16_t _context_local_name                                  		= _context_general_info.badge();
-                        bool _context_bootstrapped                                            		= _context_general_info.bootstrapped();
-			Genode::uint16_t signal_source_badge = _context.signal_source_badge();
-			unsigned long imprint = _context.imprint();
-			Rtcr::Stored_signal_context_info *stored_signal_context				= new (heap) Rtcr::Stored_signal_context_info(_context_kcap, _context_local_name, _context_bootstrapped, signal_source_badge, imprint);
-			_stored_context_infos->insert(stored_signal_context);
-			}
+				for(int j=0;j<_pd.stored_context_infos_size(); j++){
+					protobuf::Stored_signal_context_info _context				= _pd.stored_context_infos(j);
+					Rtcr::Stored_signal_context_info *stored_signal_context			= new (heap) Rtcr::Stored_signal_context_info(
+														_context.normal_info().general_info().kcap(),
+														_context.normal_info().general_info().badge(),
+														_context.normal_info().general_info().bootstrapped(),
+														_context.signal_source_badge(),
+														_context.imprint());
+					_stored_context_infos->insert(stored_signal_context);
+				}
 
-			PDBG("%d Source Infos found",_pd.stored_source_infos_size());
-			for(int k=0;k<_pd.stored_source_infos_size(); k++){
-			protobuf::Stored_signal_source_info _source 					= _pd.stored_source_infos(k);
-			protobuf::Stored_normal_info _source_normal_info                               	= _source.normal_info();
-                        protobuf::Stored_general_info _source_general_info                             	= _source_normal_info.general_info();
-                        Genode::addr_t _source_kcap                                                   	= _source_general_info.kcap();
-                        Genode::uint16_t _source_local_name                                            	= _source_general_info.badge();
-                        bool _source_bootstrapped                                                      	= _source_general_info.bootstrapped();
-			Rtcr::Stored_signal_source_info *stored_signal_source				= new (heap) Rtcr::Stored_signal_source_info(_source_kcap, _source_local_name, _source_bootstrapped);
-			_stored_source_infos->insert(stored_signal_source);
-			}
+				for(int k=0;k<_pd.stored_source_infos_size(); k++){
+					protobuf::Stored_signal_source_info _source 				= _pd.stored_source_infos(k);
+					Rtcr::Stored_signal_source_info *stored_signal_source			= new (heap) Rtcr::Stored_signal_source_info(
+														_source.normal_info().general_info().kcap(),
+														_source.normal_info().general_info().badge(),
+														_source.normal_info().general_info().bootstrapped());
+					_stored_source_infos->insert(stored_signal_source);
+				}
 
-			PDBG("%d Native Cap Infos found",_pd.stored_native_cap_infos_size());
-			for(int l=0;l<_pd.stored_native_cap_infos_size(); l++){
-			protobuf::Stored_native_capability_info _cap 					= _pd.stored_native_cap_infos(l);
-			protobuf::Stored_normal_info _cap_normal_info                               	= _cap.normal_info();
-                        protobuf::Stored_general_info _cap_general_info                             	= _cap_normal_info.general_info();
-                        Genode::addr_t _cap_kcap                                                  	= _cap_general_info.kcap();
-                        Genode::uint16_t _cap_local_name                                            	= _cap_general_info.badge();
-                        bool _cap_bootstrapped                                                      	= _cap_general_info.bootstrapped();
-			Genode::uint16_t ep_badge 							= _cap.signal_source_badge();
-			Rtcr::Stored_native_capability_info *stored_cap					= new (heap) Rtcr::Stored_native_capability_info(_cap_kcap, _cap_local_name, _cap_bootstrapped, ep_badge);
-			_stored_native_cap_infos->insert(stored_cap);
-			}
+				for(int l=0;l<_pd.stored_native_cap_infos_size(); l++){
+					protobuf::Stored_native_capability_info _cap 				= _pd.stored_native_cap_infos(l);
+					Rtcr::Stored_native_capability_info *stored_cap				= new (heap) Rtcr::Stored_native_capability_info(
+														_cap.normal_info().general_info().kcap(),
+														_cap.normal_info().general_info().badge(),
+														_cap.normal_info().general_info().bootstrapped(),
+														_cap.signal_source_badge());
+				_stored_native_cap_infos->insert(stored_cap);
+				}
 
 			}
 
@@ -823,83 +792,72 @@ void Dom0_server::serve()
                         /* protobuf */
 			PDBG("%d CPU Sessions found",_ts._stored_cpu_sessions_size());
 			for(int i=0;i<_ts._stored_cpu_sessions_size();i++) {
-                        protobuf::Stored_cpu_session_info _cpu_session                                  = _ts._stored_cpu_sessions(i);
-			protobuf::Stored_session_info __cpu_session_info         			= _cpu_session.session_info();
-                        protobuf::Stored_general_info __cpu_session_general_info                        = __cpu_session_info.general_info();
-			Genode::uint16_t cpu_session_sigh_badge                                         = _cpu_session.sigh_badge();
-			const char* __cpu_creation_args                                                 = __cpu_session_info.creation_args().c_str();
-                        const char* __cpu_upgrade_args                                                  = __cpu_session_info.upgrade_args().c_str();
-                        Genode::addr_t __cpu_session_kcap                                               = __cpu_session_general_info.kcap();
-                        Genode::uint16_t __cpu_session_local_name                                       = __cpu_session_general_info.badge();
-                        bool __cpu_session_bootstrapped                                                 = __cpu_session_general_info.bootstrapped();
+                        	protobuf::Stored_cpu_session_info _cpu_session                          = _ts._stored_cpu_sessions(i);
 
-			Genode::List<Rtcr::Stored_cpu_session_info>* _stored_cpu_sessions                = &ts._stored_cpu_sessions;
-			Rtcr::Stored_cpu_session_info *cpu_session					= new (heap) Rtcr::Stored_cpu_session_info(__cpu_creation_args, __cpu_upgrade_args, __cpu_session_kcap, __cpu_session_local_name, __cpu_session_bootstrapped, cpu_session_sigh_badge);
-			_stored_cpu_sessions->insert(cpu_session);
-			Genode::List<Rtcr::Stored_cpu_thread_info>* stored_cpu_thread_infos              = &cpu_session->stored_cpu_thread_infos;
+				Genode::List<Rtcr::Stored_cpu_session_info>* _stored_cpu_sessions       = &ts._stored_cpu_sessions;
+				Rtcr::Stored_cpu_session_info *cpu_session				= new (heap) Rtcr::Stored_cpu_session_info(
+													_cpu_session.session_info().creation_args().c_str(),
+													_cpu_session.session_info().upgrade_args().c_str(),
+													_cpu_session.session_info().general_info().kcap(),
+													_cpu_session.session_info().general_info().badge(),
+													_cpu_session.session_info().general_info().bootstrapped(),
+													_cpu_session.sigh_badge());
+				_stored_cpu_sessions->insert(cpu_session);
+				Genode::List<Rtcr::Stored_cpu_thread_info>* stored_cpu_thread_infos     = &cpu_session->stored_cpu_thread_infos;
 
-			PDBG("%d CPU Threads found", _cpu_session.stored_cpu_thread_infos_size());
-			for(int j=_cpu_session.stored_cpu_thread_infos_size()-1;j>=0;j--) {
-                        protobuf::Stored_cpu_thread_info _cpu_thread                                    = _cpu_session.stored_cpu_thread_infos(j);
-			protobuf::Stored_normal_info __cpu_normal_info					= _cpu_thread.normal_info();
-			protobuf::Stored_general_info __cpu_general_info				= __cpu_normal_info.general_info();
-			Genode::addr_t __cpu_kcap							= __cpu_general_info.kcap();
-                        Genode::uint16_t __cpu_local_name						= __cpu_general_info.badge();
-                        bool __cpu_bootstrapped								= __cpu_general_info.bootstrapped();
-			Genode::uint16_t pd_session_badge                                               = _cpu_thread.pd_session_badge();
-			PDBG("CPU Thread PD Session Badge %d",pd_session_badge);
-                        Genode::Cpu_session::Name name                                                	= &_cpu_thread.name();
-                        Genode::addr_t utcb                                                             = _cpu_thread.utcb();
-                        bool started                                                                    = _cpu_thread.started();
-                        bool paused                                                                     = _cpu_thread.paused();
-                        bool single_step                                                                = _cpu_thread.single_step();
-                        Genode::Affinity::Location affinity(_cpu_thread.affinity(),0);
-                        Genode::uint16_t cpu_thread_sigh_badge                                          = _cpu_thread.sigh_badge();
-                  	Rtcr::Stored_cpu_thread_info *cpu_thread					= new (heap) Rtcr::Stored_cpu_thread_info(__cpu_kcap, __cpu_local_name, __cpu_bootstrapped, pd_session_badge, name, Genode::Cpu_session::Weight(), utcb, started, paused, single_step, affinity, cpu_thread_sigh_badge);
-			stored_cpu_thread_infos->insert(cpu_thread);
-			}
+				for(int j=_cpu_session.stored_cpu_thread_infos_size()-1;j>=0;j--) {
+                        		protobuf::Stored_cpu_thread_info _cpu_thread                    = _cpu_session.stored_cpu_thread_infos(j);
+                  			Rtcr::Stored_cpu_thread_info *cpu_thread			= new (heap) Rtcr::Stored_cpu_thread_info(
+													_cpu_thread.normal_info().general_info().kcap(),
+													_cpu_thread.normal_info().general_info().badge(),
+													_cpu_thread.normal_info().general_info().bootstrapped(),
+													_cpu_thread.pd_session_badge(),
+													&_cpu_thread.name(),
+													Genode::Cpu_session::Weight(),
+													_cpu_thread.utcb(),
+													_cpu_thread.started(),
+													_cpu_thread.paused(),
+													_cpu_thread.single_step(),
+													Genode::Affinity::Location(_cpu_thread.affinity(),0),
+													_cpu_thread.sigh_badge());
+					stored_cpu_thread_infos->insert(cpu_thread);
+				}
 
 			}
 
 			/* RAM Session */
                         /* protobuf */
-			PDBG("%d RAM Sessions found",_ts._stored_ram_sessions_size());
 			for(int i=0;i<_ts._stored_ram_sessions_size();i++) {
-                        protobuf::Stored_ram_session_info _ram_session                                  = _ts._stored_ram_sessions(i);
-			protobuf::Stored_session_info __ram_session_info                                = _ram_session.session_info();
-                        protobuf::Stored_general_info __ram_general_info                                = __ram_session_info.general_info();
-			const char* __ram_creation_args                                                 = __ram_session_info.creation_args().c_str();
-                        const char* __ram_upgrade_args                                                  = __ram_session_info.upgrade_args().c_str();
-                        Genode::addr_t __ram_kcap                                                       = __ram_general_info.kcap();
-                        Genode::uint16_t __ram_local_name                                               = __ram_general_info.badge();
-                        bool __ram_bootstrapped                                                         = __ram_general_info.bootstrapped();
+                        	protobuf::Stored_ram_session_info _ram_session                                  = _ts._stored_ram_sessions(i);
 			
-			Genode::List<Rtcr::Stored_ram_session_info>* _stored_ram_sessions                = &ts._stored_ram_sessions;
-                        Rtcr::Stored_ram_session_info *ram_session                                       = new (heap) Rtcr::Stored_ram_session_info(__ram_creation_args, __ram_upgrade_args, __ram_kcap, __ram_local_name, __ram_bootstrapped);
-			_stored_ram_sessions->insert(ram_session);
+				Genode::List<Rtcr::Stored_ram_session_info>* _stored_ram_sessions       = &ts._stored_ram_sessions;
+                        	Rtcr::Stored_ram_session_info *ram_session                              = new (heap) Rtcr::Stored_ram_session_info(
+													_ram_session.session_info().creation_args().c_str(),
+													_ram_session.session_info().upgrade_args().c_str(),
+													_ram_session.session_info().general_info().kcap(),
+													_ram_session.session_info().general_info().badge(),
+													_ram_session.session_info().general_info().bootstrapped());
+				_stored_ram_sessions->insert(ram_session);
 
-			Genode::List<Rtcr::Stored_ram_dataspace_info>* stored_ramds_infos                = &ram_session->stored_ramds_infos;
+				Genode::List<Rtcr::Stored_ram_dataspace_info>* stored_ramds_infos       = &ram_session->stored_ramds_infos;
 
-			PDBG("%d RAM Dataspaces found", _ram_session.stored_ramds_infos_size());
-			for(int j=_ram_session.stored_ramds_infos_size()-1;j>=0; j--) {
-                        protobuf::Stored_ram_dataspace_info _ramds                                      = _ram_session.stored_ramds_infos(j);
-			protobuf::Stored_normal_info __ramds_normal_info				= _ramds.normal_info();
-			protobuf::Stored_general_info __ramds_general_info				= __ramds_normal_info.general_info();
-			Genode::addr_t __ramds_kcap                                               	= __ramds_general_info.kcap();
-                        Genode::uint16_t __ramds_local_name                                       	= __ramds_general_info.badge();
-			PDBG("RAM Dataspace badge %d",__ramds_local_name);
-                        bool __ramds_bootstrapped                                                 	= __ramds_general_info.bootstrapped();
-			Genode::size_t ram_size                                                         = _ramds.size();
-			Genode::Ram_dataspace_capability _ram_memory_content                            = Genode::env()->ram_session()->alloc(ram_size);
-			char* _ram_content								= (char*)Genode::env()->rm_session()->attach(_ram_memory_content);
-			//lwip_read(_target_socket, _ram_content ,ntohl(ram_size));
-                        Genode::Cache_attribute cached                                                  = (Genode::Cache_attribute)_ramds.cached();
-			PDBG("Cached %d",cached);
-                        bool managed                                                                    = _ramds.managed();
-                        Genode::size_t timestamp							= _ramds.timestamp();
-                       	Rtcr::Stored_ram_dataspace_info *ramds                                           = new (heap) Rtcr::Stored_ram_dataspace_info(__ramds_kcap, __ramds_local_name, __ramds_bootstrapped, _ram_memory_content, ram_size, cached, managed, timestamp);
-			stored_ramds_infos->insert(ramds);
-			}
+				for(int j=_ram_session.stored_ramds_infos_size()-1;j>=0; j--) {
+                        		protobuf::Stored_ram_dataspace_info _ramds                      = _ram_session.stored_ramds_infos(j);
+					Genode::Ram_dataspace_capability _ram_memory_content            = Genode::env()->ram_session()->alloc(_ramds.size());
+					char* _ram_content						= (char*)Genode::env()->rm_session()->attach(_ram_memory_content);
+					//lwip_read(_target_socket, _ram_content ,ntohl(ram_size));
+
+                       			Rtcr::Stored_ram_dataspace_info *ramds                          = new (heap) Rtcr::Stored_ram_dataspace_info(
+													_ramds.normal_info().general_info().kcap(),
+													_ramds.normal_info().general_info().badge(),
+													_ramds.normal_info().general_info().bootstrapped(),
+													_ram_memory_content,
+													_ramds.size(),
+													(Genode::Cache_attribute)_ramds.cached(),
+													_ramds.managed(),
+													_ramds.timestamp());
+					stored_ramds_infos->insert(ramds);
+				}
 
 			}
 
@@ -907,120 +865,104 @@ void Dom0_server::serve()
                         /* protobuf */
 			PDBG("%d ROM Sessions found",_ts._stored_rom_sessions_size());
 			for(int i=0;i<_ts._stored_rom_sessions_size();i++) {
-                        protobuf::Stored_rom_session_info _rom_session                                  = _ts._stored_rom_sessions(i);
-			protobuf::Stored_session_info __rom_session_info                                = _rom_session.session_info();
-                        protobuf::Stored_general_info __rom_general_info                                = __rom_session_info.general_info();
-			const char* __rom_creation_args                                                 = __rom_session_info.creation_args().c_str();
-                        const char* __rom_upgrade_args                                                  = __rom_session_info.upgrade_args().c_str();
-                        Genode::addr_t __rom_kcap                                                       = __rom_general_info.kcap();
-                        Genode::uint16_t __rom_local_name                                               = __rom_general_info.badge();
-                        bool __rom_bootstrapped                                                         = __rom_general_info.bootstrapped();
-                        Genode::uint16_t dataspace_badge                                                = _rom_session.dataspace_badge();
-                        Genode::uint16_t rom_sigh_badge                                                 = _rom_session.sigh_badge();
-			/* rtcr */
-                        Genode::List<Rtcr::Stored_rom_session_info>* _stored_rom_sessions                = &ts._stored_rom_sessions;
-                        Rtcr::Stored_rom_session_info *rom_session                                       = new (heap) Rtcr::Stored_rom_session_info(__rom_creation_args, __rom_upgrade_args, __rom_kcap, __rom_local_name, __rom_bootstrapped ,dataspace_badge, rom_sigh_badge);
-			_stored_rom_sessions->insert(rom_session);
+                        	protobuf::Stored_rom_session_info _rom_session                          = _ts._stored_rom_sessions(i);
+                        	Genode::List<Rtcr::Stored_rom_session_info>* _stored_rom_sessions       = &ts._stored_rom_sessions;
+                        	Rtcr::Stored_rom_session_info *rom_session                              = new (heap) Rtcr::Stored_rom_session_info(
+													_rom_session.session_info().creation_args().c_str(),
+													_rom_session.session_info().upgrade_args().c_str(),
+													_rom_session.session_info().general_info().kcap(),
+													_rom_session.session_info().general_info().badge(),
+													_rom_session.session_info().general_info().bootstrapped(),
+													_rom_session.dataspace_badge(),
+													_rom_session.sigh_badge());
+				_stored_rom_sessions->insert(rom_session);
 			}
 
                         /* RM Session */
                         /* protobuf */
 			PDBG("%d RM Sessions found",_ts._stored_rm_sessions_size());
 			for(int i=0;i<_ts._stored_rm_sessions_size();i++) {
-                        protobuf::Stored_rm_session_info _rm_session                                    = _ts._stored_rm_sessions(i);
-			protobuf::Stored_session_info __rm_session_info                                 = _rm_session.session_info();
-                        protobuf::Stored_general_info __rm_general_info                                 = __rm_session_info.general_info();
-			/* TODO object needed */
-			const char* __rm_creation_args                                                  = __rm_session_info.creation_args().c_str();
-                        const char* __rm_upgrade_args                                                   = __rm_session_info.upgrade_args().c_str();
-                        Genode::addr_t __rm_kcap                                                        = __rm_general_info.kcap();
-                        Genode::uint16_t __rm_local_name                                                = __rm_general_info.badge();
-                        bool __rm_bootstrapped                                                          = __rm_general_info.bootstrapped();
+                        	protobuf::Stored_rm_session_info _rm_session                            = _ts._stored_rm_sessions(i);
 
-			Genode::List<Rtcr::Stored_rm_session_info>* _stored_rm_sessions                  = &ts._stored_rm_sessions;
-			Rtcr::Stored_rm_session_info *rm_session                                         = new (heap) Rtcr::Stored_rm_session_info(__rm_creation_args, __rm_upgrade_args, __rm_kcap, __rm_local_name, __rm_bootstrapped);
+				Genode::List<Rtcr::Stored_rm_session_info>* _stored_rm_sessions         = &ts._stored_rm_sessions;
+				Rtcr::Stored_rm_session_info *rm_session                                = new (heap) Rtcr::Stored_rm_session_info(
+													_rm_session.session_info().creation_args().c_str(),
+													_rm_session.session_info().upgrade_args().c_str(),
+													_rm_session.session_info().general_info().kcap(),
+													_rm_session.session_info().general_info().badge(),
+													_rm_session.session_info().general_info().bootstrapped());
 			
-			_stored_rm_sessions->insert(rm_session);
+				_stored_rm_sessions->insert(rm_session);
                         
-			Genode::List<Rtcr::Stored_region_map_info>* _stored_region_map_infos             = &rm_session->stored_region_map_infos;
+				Genode::List<Rtcr::Stored_region_map_info>* _stored_region_map_infos    = &rm_session->stored_region_map_infos;
 			
-			for(int j=_rm_session.stored_region_map_infos_size()-1;j>=0; j--) {
-			protobuf::Stored_region_map_info _region_map                              	= _rm_session.stored_region_map_infos(j);
-			protobuf::Stored_normal_info __region_map_normal_info				= _region_map.normal_info();
-			protobuf::Stored_general_info __region_map_general_info				= __region_map_normal_info.general_info();
-			Genode::addr_t __region_map_kcap                                                = __region_map_general_info.kcap();
-                        Genode::uint16_t __region_map_name                                              = __region_map_general_info.badge();
-                        bool __region_map_bootstrapped                                                  = __region_map_general_info.bootstrapped();
-			Genode::size_t   rm_size                                                        = _region_map.size();
-                        Genode::uint16_t ds_badge                                                       = _region_map.ds_badge();
-                        Genode::uint16_t rm_sigh_badge                                                  = _region_map.sigh_badge();
-			Rtcr::Stored_region_map_info *region_map                                         = new (heap) Rtcr::Stored_region_map_info(__region_map_kcap, __region_map_name, __region_map_bootstrapped, rm_size, ds_badge, rm_sigh_badge);
-			_stored_region_map_infos->insert(region_map);
+				for(int j=_rm_session.stored_region_map_infos_size()-1;j>=0; j--) {
+					protobuf::Stored_region_map_info _region_map                    = _rm_session.stored_region_map_infos(j);
+					Rtcr::Stored_region_map_info *region_map                        = new (heap) Rtcr::Stored_region_map_info(
+													_region_map.normal_info().general_info().kcap(),
+													_region_map.normal_info().general_info().badge(),
+													_region_map.normal_info().general_info().bootstrapped(),
+													_region_map.size(),
+													_region_map.ds_badge(),
+													_region_map.sigh_badge());
+					_stored_region_map_infos->insert(region_map);
 
-			Genode::List<Rtcr::Stored_attached_region_info>* _stored_attached_region_infos   = &region_map->stored_attached_region_infos;
+					Genode::List<Rtcr::Stored_attached_region_info>* _stored_attached_region_infos   = &region_map->stored_attached_region_infos;
 
-			for(int k=_region_map.stored_attached_region_infos_size()-1;k>=0; k--) {
-                        protobuf::Stored_attached_region_info _attached_region                    	= _region_map.stored_attached_region_infos(k);
-			protobuf::Stored_normal_info __attached_normal_info				= _attached_region.normal_info();
-			protobuf::Stored_general_info __attached_general_info				= __attached_normal_info.general_info();
-			Genode::addr_t __attached_kcap                                                	= __attached_general_info.kcap();
-                        Genode::uint16_t __attached_name                                              	= __attached_general_info.badge();
-                        bool __attached_bootstrapped                                                  	= __attached_general_info.bootstrapped();
-                        Genode::uint16_t attached_ds_badge                                              = _attached_region.attached_ds_badge();
-                        Genode::size_t attached_rm_size                                                 = _attached_region.size();
-			Genode::Ram_dataspace_capability _rm_memory_content                             = Genode::env()->ram_session()->alloc(attached_rm_size);
-			char* _rm_content								= (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
-			//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
-                        
-                        Genode::off_t offset                                                            = _attached_region.offset();
-                        Genode::addr_t rel_addr                                                         = _attached_region.rel_addr();
-                        bool executable                                                                 = _attached_region.executable();
-                        
-                        Rtcr::Stored_attached_region_info *attached_region                               = new (heap) Rtcr::Stored_attached_region_info(__attached_kcap, __attached_name, __attached_bootstrapped, attached_ds_badge, _rm_memory_content, rm_size, offset, rel_addr, executable);
-			_stored_attached_region_infos->insert(attached_region);
+					for(int k=_region_map.stored_attached_region_infos_size()-1;k>=0; k--) {
+                        			protobuf::Stored_attached_region_info _attached_region  = _region_map.stored_attached_region_infos(k);
+						Genode::Ram_dataspace_capability _rm_memory_content     = Genode::env()->ram_session()->alloc(_attached_region.size());
+						char* _rm_content					= (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
+						//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+
+                        			Rtcr::Stored_attached_region_info *attached_region      = new (heap) Rtcr::Stored_attached_region_info(
+													_attached_region.normal_info().general_info().kcap(),
+													_attached_region.normal_info().general_info().badge(),
+													_attached_region.normal_info().general_info().bootstrapped(),
+													_attached_region.attached_ds_badge(),
+													_rm_memory_content,
+													_attached_region.size(),
+													_attached_region.offset(),
+													_attached_region.rel_addr(),
+													_attached_region.executable());
+						_stored_attached_region_infos->insert(attached_region);
 			
-			}
+					}
 
-			}
+				}
 
 			}
 
                         /* LOG Session */
                         PDBG("%d Log Sessions found",_ts._stored_log_sessions_size());
                         for(int i=0;i<_ts._stored_log_sessions_size();i++) {
-                        protobuf::Stored_log_session_info _timer_session                              = _ts._stored_log_sessions(i);
-                        protobuf::Stored_session_info __timer_session_info                              = _timer_session.session_info();
-                        protobuf::Stored_general_info __timer_general_info                              = __timer_session_info.general_info();
-                        const char* __timer_creation_args                                               = __timer_session_info.creation_args().c_str();
-                        const char* __timer_upgrade_args                                                = __timer_session_info.upgrade_args().c_str();
-                        Genode::addr_t __timer_kcap                                                     = __timer_general_info.kcap();
-                        Genode::uint16_t __timer_local_name                                             = __timer_general_info.badge();
-                        bool __timer_bootstrapped                                                       = __timer_general_info.bootstrapped();
-                        /* rtcr */
-                        Genode::List<Rtcr::Stored_log_session_info>* _stored_log_sessions            = &ts._stored_log_sessions;
-                        Rtcr::Stored_log_session_info *log_session                                   = new (heap) Rtcr::Stored_log_session_info(__timer_creation_args, __timer_upgrade_args, __timer_kcap, __timer_local_name, __timer_bootstrapped);
-                        _stored_log_sessions->insert(log_session); 
+                        	protobuf::Stored_log_session_info _log_session                          = _ts._stored_log_sessions(i);
+                        	Genode::List<Rtcr::Stored_log_session_info>* _stored_log_sessions     	= &ts._stored_log_sessions;
+                        	Rtcr::Stored_log_session_info *log_session                              = new (heap) Rtcr::Stored_log_session_info(
+													_log_session.session_info().creation_args().c_str(),
+													_log_session.session_info().upgrade_args().c_str(),
+													_log_session.session_info().general_info().kcap(),
+													_log_session.session_info().general_info().badge(),
+													_log_session.session_info().general_info().bootstrapped());
+                        	_stored_log_sessions->insert(log_session); 
 			}
 
                         /* Timer Session */
                         /* protobuf */
 			PDBG("%d Timer Sessions found",_ts._stored_timer_sessions_size());
 			for(int i=0;i<_ts._stored_timer_sessions_size();i++) {
-                        protobuf::Stored_timer_session_info _timer_session                              = _ts._stored_timer_sessions(i);
-			protobuf::Stored_session_info __timer_session_info                              = _timer_session.session_info();
-                        protobuf::Stored_general_info __timer_general_info                              = __timer_session_info.general_info();
-			const char* __timer_creation_args                                               = __timer_session_info.creation_args().c_str();
-                        const char* __timer_upgrade_args                                                = __timer_session_info.upgrade_args().c_str();
-                        Genode::addr_t __timer_kcap                                                     = __timer_general_info.kcap();
-                        Genode::uint16_t __timer_local_name                                             = __timer_general_info.badge();
-                        bool __timer_bootstrapped                                                       = __timer_general_info.bootstrapped();
-                        Genode::uint16_t timer_sigh_badge                                               = _timer_session.sigh_badge();
-                        unsigned         timeout                                                        = _timer_session.timeout();
-                        bool             periodic                                                       = _timer_session.periodic();
-			/* rtcr */
-                        Genode::List<Rtcr::Stored_timer_session_info>* _stored_timer_sessions            = &ts._stored_timer_sessions;
-                        Rtcr::Stored_timer_session_info *timer_session                                   = new (heap) Rtcr::Stored_timer_session_info(__timer_creation_args, __timer_upgrade_args, __timer_kcap, __timer_local_name, __timer_bootstrapped, timer_sigh_badge, timeout, periodic);
-			_stored_timer_sessions->insert(timer_session);
+                        	protobuf::Stored_timer_session_info _timer_session                      = _ts._stored_timer_sessions(i);
+                        	Genode::List<Rtcr::Stored_timer_session_info>* _stored_timer_sessions   = &ts._stored_timer_sessions;
+                       		Rtcr::Stored_timer_session_info *timer_session                          = new (heap) Rtcr::Stored_timer_session_info(
+													_timer_session.session_info().creation_args().c_str(),
+													_timer_session.session_info().upgrade_args().c_str(),
+													_timer_session.session_info().general_info().kcap(),
+													_timer_session.session_info().general_info().badge(),
+													_timer_session.session_info().general_info().bootstrapped(),
+													_timer_session.sigh_badge(),
+													_timer_session.timeout(),
+													_timer_session.periodic());
+				_stored_timer_sessions->insert(timer_session);
 			}
 
 			PDBG("TIMER Session %p", &(ts._stored_timer_sessions.first()->badge));
