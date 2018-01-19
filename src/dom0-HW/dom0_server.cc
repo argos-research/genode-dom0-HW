@@ -824,7 +824,7 @@ void Dom0_server::serve()
 													_cpu_thread.normal_info().general_info().badge(),
 													_cpu_thread.normal_info().general_info().bootstrapped(),
 													_cpu_thread.pd_session_badge(),
-													&_cpu_thread.name(),
+													_cpu_thread.name().c_str(),
 													Genode::Cpu_session::Weight(),
 													_cpu_thread.utcb(),
 													_cpu_thread.started(),
