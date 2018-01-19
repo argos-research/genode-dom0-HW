@@ -151,23 +151,29 @@ void Dom0_server::set_normal_info(Genode::Heap &heap, Rtcr::Stored_normal_info *
 	p->set_allocated_general_info(general);
 }
 
-void Dom0_server::send_ckpt_dataspace(Genode::Ram_dataspace_capability cap, sockaddr _target_socket)
+void Dom0_server::send_ckpt_dataspace(Genode::Ram_dataspace_capability cap, Genode::size_t attached_rm_size, int _target_socket)
 {
-        /* attache capability to send it over network */
-        char* rm_content                                                        = (char*)_env.rm().attach(cap);
-        //PDBG("Read from address: %p",rm_content);
-        /*
-        int32_t read=0;
-        lwip_read(_target_socket,&read,4);
-        if(read==CHECKPOINT) {
-        PDBG("Send dataspace");
-        int32_t message=REGION_MAP;
-        lwip_write(_target_socket,&message,4);
-        */
+	if(268435456>attached_rm_size)
+	{
+        	char* rm_content                         	= (char*)_env.rm().attach(cap);
+        	lwip_write(_target_socket,&attached_rm_size,4);
+        	lwip_write(_target_socket,rm_content,attached_rm_size);
+        	Genode::env()->rm_session()->detach(rm_content);
+	}
+}
 
-        //lwip_write(_target_socket,&attached_rm_size,4);
-        //lwip_write(_target_socket,rm_content,attached_rm_size);
-        Genode::env()->rm_session()->detach(rm_content);
+void Dom0_server::recv_ckpt_dataspace(Genode::Ram_dataspace_capability cap, Genode::size_t attached_rm_size, int _target_socket)
+{
+	if(268435456>attached_rm_size)
+	{
+		Genode::size_t size=0;
+        	char* rm_content                         	= (char*)_env.rm().attach(cap);
+        	lwip_read(_target_socket, &size ,4);
+		size=ntohl(size);
+		PDBG("Receiving file of size %d, expected size %d", size, attached_rm_size);
+		_starter_thread.thread_receive_data(rm_content,size,_target_socket);        	
+        	Genode::env()->rm_session()->detach(rm_content);
+	}
 }
 
 void Dom0_server::serve()
@@ -256,6 +262,8 @@ void Dom0_server::serve()
                         		_attached_region->set_allocated_normal_info(_attached_info);
 
 					address_space_attached_region=address_space_attached_region->next();
+
+					send_ckpt_dataspace(rm_memory_content, attached_rm_size, _target_socket);
 				}
 
 				Rtcr::Stored_region_map_info* stored_stack_area					= &pd_session->stored_stack_area;
@@ -297,6 +305,8 @@ void Dom0_server::serve()
 					_attached_region->set_allocated_normal_info(_attached_info);
 
 					stack_area_attached_region=stack_area_attached_region->next();
+
+					send_ckpt_dataspace(rm_memory_content, attached_rm_size, _target_socket);
 				}
 
 				Rtcr::Stored_region_map_info* stored_linker_area				= &pd_session->stored_linker_area;
@@ -338,6 +348,8 @@ void Dom0_server::serve()
                         		_attached_region->set_allocated_normal_info(_attached_info);
 
 					attached_region=attached_region->next();
+
+					send_ckpt_dataspace(rm_memory_content, attached_rm_size, _target_socket);
 				}
 
 				Genode::List<Rtcr::Stored_signal_context_info> stored_context_infos 		= pd_session->stored_context_infos;
@@ -479,6 +491,8 @@ void Dom0_server::serve()
 
                         		_ram_ds->set_allocated_normal_info(_ram_normal_info);
 
+					send_ckpt_dataspace(ram_memory_content, ram_size, _target_socket);
+
 					ramds=ramds->next();
 
 				}
@@ -548,12 +562,17 @@ void Dom0_server::serve()
 			
 						protobuf::Stored_attached_region_info* _attached_region				= _region_map->add_stored_attached_region_infos();
 						protobuf::Stored_normal_info* _attached_normal_info                                 = new (heap) protobuf::Stored_normal_info();
+
+						set_normal_info(heap, attached_region, _attached_normal_info);
+
 						_attached_region->set_attached_ds_badge(attached_ds_badge);
 						_attached_region->set_size(attached_rm_size);
 						_attached_region->set_offset(offset);
 						_attached_region->set_rel_addr(rel_addr);
 						_attached_region->set_executable(executable);
                         			_attached_region->set_allocated_normal_info(_attached_normal_info);
+
+						send_ckpt_dataspace(rm_memory_content, attached_rm_size, _target_socket);
 
 						attached_region=attached_region->next();
 					}
@@ -617,26 +636,22 @@ void Dom0_server::serve()
 		}
 		else if (message == RESTORE)
 		{
-			//try {
-                        //_env.rm().detach(4096);
-                        //} catch(...) {PDBG("Unable to detach");}
 			Genode::Heap              heap            { _env.ram(), _env.rm() };
-			//Genode::Heap              _heap            { _env.ram(), _env.rm() };
 			Genode::Service_registry  parent_services { };
 			Rtcr::Target_child child_restored { _env, heap, parent_services, "sheep_counter", 0 };
 			Rtcr::Target_state ts(_env, heap);
 			protobuf::Target_state _ts;
-
+			
 			int size=0;
-			lwip_read(_target_socket, &size, ntohl(4));
+			lwip_read(_target_socket, &size, 4);
+			size=ntohl(size);
 			PDBG("Receive target state of size %d",size);
 			Genode::Ram_dataspace_capability state_ds=Genode::env()->ram_session()->alloc(size);
-			char* bar=Genode::env()->rm_session()->attach(state_ds);
-			int32_t message=GO_SEND;
-			lwip_write(_target_socket,&message,4);		
-			lwip_read(_target_socket, bar, ntohl(size));
-			_ts.ParseFromArray(bar,ntohl(size));
-	
+			char* bar=Genode::env()->rm_session()->attach(state_ds);	
+			lwip_read(_target_socket, bar, size);
+			PDBG("Receive done");
+			_ts.ParseFromArray(bar,size);
+			PDBG("Parsed from array");
 			ts._cap_idx_alloc_addr=_ts._cap_idx_alloc_addr();
 
 			/* PD Session */
@@ -683,13 +698,12 @@ void Dom0_server::serve()
 
 				Genode::List<Rtcr::Stored_attached_region_info> *_address_space_stored_attached_region_infos   = &pd_session->stored_address_space.stored_attached_region_infos;
                         
-				for(int k=_pd.stored_address_space().stored_attached_region_infos_size()-1;k>=0; k--) {
+				for(int k=0; k<_pd.stored_address_space().stored_attached_region_infos_size(); k++) {
                         		protobuf::Stored_attached_region_info _attached_region                          = _pd.stored_address_space().stored_attached_region_infos(k);
 
                         		Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(_attached_region.size());
-					char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
 
-					//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+					recv_ckpt_dataspace(_rm_memory_content, _attached_region.size(), _target_socket);
 
                         		Rtcr::Stored_attached_region_info *attached_region	= new (heap) Rtcr::Stored_attached_region_info(
 												_attached_region.normal_info().general_info().kcap(),
@@ -706,13 +720,12 @@ void Dom0_server::serve()
 
                         	Genode::List<Rtcr::Stored_attached_region_info> *_stack_area_stored_attached_region_infos   = &pd_session->stored_stack_area.stored_attached_region_infos;
 
-                        	for(int k=_pd.stored_stack_area().stored_attached_region_infos_size()-1; k>=0; k--) {
+                        	for(int k=0; k<_pd.stored_stack_area().stored_attached_region_infos_size(); k++) {
                         		protobuf::Stored_attached_region_info _attached_region                          = _pd.stored_stack_area().stored_attached_region_infos(k);
                         
 					Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(_attached_region.size());
-					char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
 
-					//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+					recv_ckpt_dataspace(_rm_memory_content, _attached_region.size(), _target_socket);
 
                         		Rtcr::Stored_attached_region_info *attached_region	= new (heap) Rtcr::Stored_attached_region_info(
 												_attached_region.normal_info().general_info().kcap(),
@@ -730,13 +743,12 @@ void Dom0_server::serve()
 
 				Genode::List<Rtcr::Stored_attached_region_info> *_linker_area_stored_attached_region_infos   = &pd_session->stored_linker_area.stored_attached_region_infos;
                         
-                        	for(int k=_pd.stored_linker_area().stored_attached_region_infos_size()-1; k>=0; k--) {
+                        	for(int k=0; k<_pd.stored_linker_area().stored_attached_region_infos_size(); k++) {
                        			protobuf::Stored_attached_region_info _attached_region                          = _pd.stored_linker_area().stored_attached_region_infos(k);
                         
 					Genode::Ram_dataspace_capability _rm_memory_content                             = _env.ram().alloc(_attached_region.size());
-					char* _rm_content                                                               = (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
 
-					//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+					recv_ckpt_dataspace(_rm_memory_content, _attached_region.size(), _target_socket);
 
                         		Rtcr::Stored_attached_region_info *attached_region	= new (heap) Rtcr::Stored_attached_region_info(
 												_attached_region.normal_info().general_info().kcap(),
@@ -805,7 +817,7 @@ void Dom0_server::serve()
 				_stored_cpu_sessions->insert(cpu_session);
 				Genode::List<Rtcr::Stored_cpu_thread_info>* stored_cpu_thread_infos     = &cpu_session->stored_cpu_thread_infos;
 
-				for(int j=_cpu_session.stored_cpu_thread_infos_size()-1;j>=0;j--) {
+				for(int j=0; j<_cpu_session.stored_cpu_thread_infos_size(); j++) {
                         		protobuf::Stored_cpu_thread_info _cpu_thread                    = _cpu_session.stored_cpu_thread_infos(j);
                   			Rtcr::Stored_cpu_thread_info *cpu_thread			= new (heap) Rtcr::Stored_cpu_thread_info(
 													_cpu_thread.normal_info().general_info().kcap(),
@@ -841,11 +853,12 @@ void Dom0_server::serve()
 
 				Genode::List<Rtcr::Stored_ram_dataspace_info>* stored_ramds_infos       = &ram_session->stored_ramds_infos;
 
-				for(int j=_ram_session.stored_ramds_infos_size()-1;j>=0; j--) {
+				for(int j=0; j<_ram_session.stored_ramds_infos_size(); j++) {
                         		protobuf::Stored_ram_dataspace_info _ramds                      = _ram_session.stored_ramds_infos(j);
 					Genode::Ram_dataspace_capability _ram_memory_content            = Genode::env()->ram_session()->alloc(_ramds.size());
 					char* _ram_content						= (char*)Genode::env()->rm_session()->attach(_ram_memory_content);
-					//lwip_read(_target_socket, _ram_content ,ntohl(ram_size));
+					
+					recv_ckpt_dataspace(_ram_memory_content, _ramds.size(), _target_socket);
 
                        			Rtcr::Stored_ram_dataspace_info *ramds                          = new (heap) Rtcr::Stored_ram_dataspace_info(
 													_ramds.normal_info().general_info().kcap(),
@@ -896,7 +909,7 @@ void Dom0_server::serve()
                         
 				Genode::List<Rtcr::Stored_region_map_info>* _stored_region_map_infos    = &rm_session->stored_region_map_infos;
 			
-				for(int j=_rm_session.stored_region_map_infos_size()-1;j>=0; j--) {
+				for(int j=0; j<_rm_session.stored_region_map_infos_size(); j++) {
 					protobuf::Stored_region_map_info _region_map                    = _rm_session.stored_region_map_infos(j);
 					Rtcr::Stored_region_map_info *region_map                        = new (heap) Rtcr::Stored_region_map_info(
 													_region_map.normal_info().general_info().kcap(),
@@ -909,11 +922,11 @@ void Dom0_server::serve()
 
 					Genode::List<Rtcr::Stored_attached_region_info>* _stored_attached_region_infos   = &region_map->stored_attached_region_infos;
 
-					for(int k=_region_map.stored_attached_region_infos_size()-1;k>=0; k--) {
+					for(int k=0; k<_region_map.stored_attached_region_infos_size(); k++) {
                         			protobuf::Stored_attached_region_info _attached_region  = _region_map.stored_attached_region_infos(k);
 						Genode::Ram_dataspace_capability _rm_memory_content     = Genode::env()->ram_session()->alloc(_attached_region.size());
-						char* _rm_content					= (char*)Genode::env()->rm_session()->attach(_rm_memory_content);
-						//lwip_read(_target_socket, _rm_content ,ntohl(attached_rm_size));
+						
+						recv_ckpt_dataspace(_rm_memory_content, _attached_region.size(), _target_socket);
 
                         			Rtcr::Stored_attached_region_info *attached_region      = new (heap) Rtcr::Stored_attached_region_info(
 													_attached_region.normal_info().general_info().kcap(),

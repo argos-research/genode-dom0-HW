@@ -41,7 +41,9 @@ public:
 
 	void set_normal_info(Genode::Heap &heap, Rtcr::Stored_normal_info *r, protobuf::Stored_normal_info *p);
 
-	void send_ckpt_dataspace(Genode::Ram_dataspace_capability cap, sockaddr _target_socket);
+	void send_ckpt_dataspace(Genode::Ram_dataspace_capability cap, Genode::size_t attached_rm_size, int _target_socket);
+
+	void recv_ckpt_dataspace(Genode::Ram_dataspace_capability cap, Genode::size_t attached_rm_size, int _target_socket);
 
 	int connect();
 
