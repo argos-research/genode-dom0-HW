@@ -15,6 +15,11 @@
 #include <base/heap.h>
 #include <base/service.h>
 
+/* Rtcr includes */
+#include "rtcr/target_child.h"
+#include "rtcr/target_state.h"
+#include "rtcr/checkpointer.h"
+#include "rtcr/restorer.h"
 
 /*extern "C" {
 #include <lwip/stats.h>
@@ -31,6 +36,12 @@ public:
 	Dom0_server(Genode::Env &env);
 
 	~Dom0_server();
+
+	void set_session_info(Genode::Heap &heap, Rtcr::Stored_session_info *r, protobuf::Stored_session_info* p);
+
+	void set_normal_info(Genode::Heap &heap, Rtcr::Stored_normal_info *r, protobuf::Stored_normal_info *p);
+
+	void send_ckpt_dataspace(Genode::Ram_dataspace_capability cap, sockaddr _target_socket);
 
 	int connect();
 
