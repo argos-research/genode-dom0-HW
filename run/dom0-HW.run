@@ -15,6 +15,7 @@ set build_components {
 	core init dom0-HW parser taskloader mon_manager utilization sched_controller sync
 	drivers/timer
 	drivers/nic
+	server/nic_bridge
 }
 
 lappend_if $use_usb_driver              build_components drivers/usb
@@ -50,6 +51,15 @@ set config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
+	<start name="nic_bridge">
+		<resource name="RAM" quantum="24M"/>
+		<provides><service name="Nic"/></provides>
+		<route>
+			<service name="Nic"> <child name="usb_drv"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+		<config/>
+	</start>
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
@@ -65,13 +75,21 @@ set config {
 	<start name="dom0-HW">
 		<resource name="RAM" quantum="40M"/>
 		<provides><service name="dom0"/></provides>
+		<route>
+			<service name="Nic"> <child name="nic_bridge"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 		<config>
-			<network dhcp="yes" ip-address="10.200.40.10" subnet-mask="255.255.255.0" default-gateway="10.200.40.1" port="3001"/>
+			<network dhcp="yes" ip-address="10.200.40.14" subnet-mask="255.255.255.0" default-gateway="10.200.40.1" port="3001"/>
 		</config>
 	</start>
 	<start name="taskloader">
 		<resource name="RAM" quantum="50M"/>
 		<provides><service name="taskloader"/></provides>
+		<route>
+			<service name="Nic"> <child name="nic_bridge"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 		<config>
 			<trace quota="10M" buf-size="1M"/>
 			<profile ds-size="10M"/>
@@ -103,12 +121,12 @@ append_if [have_spec gpio] config {
 
 append_if $use_usb_driver config {
 	<start name="usb_drv">
-		<resource name="RAM" quantum="12M"/>
+		<resource name="RAM" quantum="25M"/>
 		<provides>
 			<service name="Nic"/>
 		</provides>
 		<config uhci="yes" ehci="yes" xhci="yes">
-			<nic mac="02:00:00:00:01:01"/>
+			<nic mac="0A:02:00:00:00:02"/>
 		</config>
 	</start>}
 
@@ -140,8 +158,13 @@ set boot_modules {
 	ld.lib.so
 	libc.lib.so
 	stdcxx.lib.so
-	lwip.lib.so
 	libm.lib.so
+	libmosquitto.lib.so 
+	lwip.lib.so 
+	libssl.lib.so 
+	libcrypto.lib.so  
+	pthread.lib.so
+	nic_bridge 
 }
 
 # platform-specific modules

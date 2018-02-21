@@ -180,6 +180,7 @@ void Dom0_server::serve()
 	while (true)
 	{
 		NETCHECK_LOOP(_starter_thread.receiveInt32_t(message, _target_socket));
+		PDBG("received something %llu", timer.now_us());
 		if (message == SEND_DESCS)
 		{
 			int time_before=timer.elapsed_ms();
@@ -347,8 +348,12 @@ void Dom0_server::Child_starter_thread::entry()
 
 void Dom0_server::send_profile(Genode::String<32> task_name)
 {
+	int time_before=timer.elapsed_ms();
 	_controller.optimize(task_name);
-	_starter_thread.do_send_profile(_target_socket);	
+	PDBG("Optimizer. Took: %d",timer.elapsed_ms()-time_before);
+	time_before=timer.elapsed_ms();
+	_starter_thread.do_send_profile(_target_socket);
+	PDBG("Done PUSH_PROFILE. Took: %d",timer.elapsed_ms()-time_before);	
 }
 
 Dom0_server::Child_starter_thread Dom0_server::_starter_thread;
