@@ -56,10 +56,6 @@ Dom0_server::Dom0_server() :
 			PERR("lwip init failed!");
 			return;
 		}
-		/* dhcp assignement takes some time... */
-		PDBG("Waiting 10s for ip assignement");
-		Timer::Connection timer;
-		timer.msleep(10000);
 	}
 	else
 	{
