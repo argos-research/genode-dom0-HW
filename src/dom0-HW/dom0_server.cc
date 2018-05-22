@@ -313,11 +313,14 @@ void Dom0_server::Child_starter_thread::do_send_profile(int target_socket)
 	Genode::Dataspace_capability xmlDsCap = _task_loader.profile_data();
 	Genode::Region_map* rm = Genode::env()->rm_session();
 	char* xml = (char*)rm->attach(xmlDsCap);
-	size_t size = std::strlen(xml) + 1;
-	PINF("Sending profile data of size %d", size);
-	sendInt32_t(size, target_socket);
-	send_data(xml, size, target_socket);
-	rm->detach(xml);
+	if(std::strlen(xml)>0)
+	{
+		size_t size = std::strlen(xml) + 1;
+		PINF("Sending profile data of size %d", size);
+		sendInt32_t(size, target_socket);
+		send_data(xml, size, target_socket);
+		rm->detach(xml);
+	}
 }
 
 void Dom0_server::Child_starter_thread::do_send_live(int target_socket)
@@ -325,11 +328,14 @@ void Dom0_server::Child_starter_thread::do_send_live(int target_socket)
 	Genode::Dataspace_capability xmlDsCap = _parser.live_data();
 	Genode::Region_map* rm = Genode::env()->rm_session();
 	char* xml = (char*)rm->attach(xmlDsCap);
-	size_t size = std::strlen(xml) + 1;
-	PINF("Sending live data of size %d", size);
-	sendInt32_t(size, target_socket);
-	send_data(xml, size, target_socket);
-	rm->detach(xml);
+	if(std::strlen(xml)>0)
+	{
+		size_t size = std::strlen(xml) + 1;
+		PINF("Sending live data of size %d", size);
+		sendInt32_t(size, target_socket);
+		send_data(xml, size, target_socket);
+		rm->detach(xml);
+	}
 }
 
 void Dom0_server::Child_starter_thread::entry()
