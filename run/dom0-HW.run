@@ -70,7 +70,7 @@ set config {
 		</config>
 	</start>
 	<start name="taskloader">
-		<resource name="RAM" quantum="50M"/>
+		<resource name="RAM" quantum="500M"/>
 		<provides><service name="taskloader"/></provides>
 		<config>
 			<trace quota="10M" buf-size="1M"/>
