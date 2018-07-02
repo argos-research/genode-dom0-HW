@@ -1,90 +1,48 @@
-/* global includes */
-#include <base/env.h>
-#include <base/printf.h>
-#include <base/rpc_server.h>
+#include <base/component.h>
+#include <libc/component.h>
+#include <base/signal.h>
 #include <base/sleep.h>
-#include <cap_session/connection.h>
-#include <root/component.h>
-
+#include <base/log.h>
+#include <base/printf.h>
 #include <dom0-HW/dom0_server.h>
-#include <dom0-HW/dom0_session.h>
+#include <base/heap.h>
+#include <base/service.h>
 
-namespace Dom0_server
-{
-
-	struct Session_component : Genode::Rpc_object<Session>
-	{
-
-		private:
-
-			Dom0_server *_dom0_server = nullptr;
-
-		public:
-
-			void send_profile(Genode::String<32> task_name)
-			{
-				return _dom0_server->send_profile(task_name);
-			}
-
-			Session_component(Dom0_server *dom0_server)
-			: Genode::Rpc_object<Session>()
-			{
-				_dom0_server = dom0_server;
-			}
-
-	};
-
-	class Root_component : public Genode::Root_component<Session_component>
-	{
-
-		private:
-
-			Dom0_server *_dom0_server = nullptr;
-
-		protected:
-
-			Session_component *_create_session(const char *args)
-			{
-				return new (md_alloc()) Session_component(_dom0_server);
-			}
-
-		public:
-
-			Root_component(Genode::Rpc_entrypoint *ep,
-			               Genode::Allocator *allocator,
-			               Dom0_server *dom0_server)
-			: Genode::Root_component<Session_component>(ep, allocator)
-			{
-				_dom0_server = dom0_server;
-			}
-	};
-
+namespace Dom0 {
+	struct Main;
 }
 
-using namespace Genode;
-
-int main(int argc, char* argv[])
+struct Dom0::Main
 {
-	PDBG("dom0: Hello!\n");
+	enum { ROOT_STACK_SIZE = 16*1024 };
+	Genode::Env                 &env;
+	Genode::Heap              heap            { env.ram(), env.rm() };
 
-	Dom0_server::Dom0_server server;
-
-	Cap_connection cap;
-
-	static Genode::Sliced_heap sliced_heap(env()->ram_session(),
-	                               env()->rm_session());
-
-	enum { STACK_SIZE = 4096 };
-	static Rpc_entrypoint ep(&cap, STACK_SIZE, "dom0_server_ep");
-
-	static Dom0_server::Root_component dom0_server_root(&ep, &sliced_heap, &server);
-	env()->parent()->announce(ep.manage(&dom0_server_root));
-
-
-	while (true)
+	Main(Genode::Env &env_) : env(env_)
 	{
-		// Sworn to connect and serve.
-		server.connect();
-		server.serve();
+		using namespace Genode;
+
+		Genode::log("dom0: Hello!");
+
+		Dom0_server::Dom0_server server(env);
+
+		while (true)
+		{
+			// Sworn to connect and serve.
+			server.connect(env);
+			server.serve(env);
+		}
 	}
+};
+
+Genode::size_t Component::stack_size() { return 32*1024; }
+
+void Component::construct(Genode::Env &env)
+{
+	static Dom0::Main main(env);
+}
+
+void Libc::Component::construct(Libc::Env&)
+{
+	//Libc::with_libc([&] () { });
 }
