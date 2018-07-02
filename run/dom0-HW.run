@@ -50,46 +50,47 @@ set config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
+	<default caps="50"/>
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="mon_manager">
+	<start name="mon_manager" caps="100">
         	<resource name="RAM" quantum="40M"/>
         	<provides><service name="mon_manager"/></provides>
         </start>
-	<start name="utilization">
+	<start name="utilization" caps="100">
         	<resource name="RAM" quantum="10M"/>
         	<provides><service name="utilization"/></provides>
         </start>
-	<start name="dom0-HW">
+	<start name="dom0-HW" caps="100">
 		<resource name="RAM" quantum="40M"/>
 		<provides><service name="dom0"/></provides>
 		<config>
 			<network dhcp="yes" ip-address="10.200.40.10" subnet-mask="255.255.255.0" default-gateway="10.200.40.1" port="3001"/>
 		</config>
 	</start>
-	<start name="taskloader">
-		<resource name="RAM" quantum="500M"/>
+	<start name="taskloader" caps="100">
+		<resource name="RAM" quantum="200M"/>
 		<provides><service name="taskloader"/></provides>
 		<config>
 			<trace quota="10M" buf-size="1M"/>
 			<profile ds-size="10M"/>
 		</config>
 	</start>
-	<start name="parser">
-		<resource name="RAM" quantum="40M"/>
+	<start name="parser" caps="100">
+		<resource name="RAM" quantum="200M"/>
 		<provides> <service name="parser"/> </provides>
 		<config>
 			<trace quota="20M" buf-size="10M"/>
 			<profile ds-size="20M"/>
 		</config>
 	</start>
-	<start name="sched_controller">
+	<start name="sched_controller" caps="100">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Sched_controller"/> </provides>
 	</start>
-	<start name="sync">
+	<start name="sync" caps="100">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="sync"/> </provides>
 	</start>}
