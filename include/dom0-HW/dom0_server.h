@@ -36,7 +36,8 @@ private:
 	class Child_starter_thread : Genode::Thread_deprecated<2*4096>
 	{
 	public:
-		Child_starter_thread();
+		Genode::Env &_env;
+		Child_starter_thread(Genode::Env &env);
 		void do_start(int target_socket);
 		void do_stop(int target_socket);
 		void do_clear(int target_socket);
@@ -51,26 +52,26 @@ private:
 		
 
 	private:
-		Timer::Connection _timer;
-		Taskloader_connection _task_loader;
-		Parser_connection _parser;
+		//Timer::Connection _timer;
+		Taskloader_connection _task_loader {};
+		Parser_connection _parser {};
 		void entry() override;
 	};
-
-	int _target_socket;
-	struct sockaddr_in _target_sockaddr_in;
+	Genode::Env &_env;
+	int _target_socket {};
+	struct sockaddr_in _target_sockaddr_in {};
 
 	int _listen_socket;
-	struct sockaddr_in _in_addr;
+	struct sockaddr_in _in_addr {};
 	sockaddr _target_addr;
 	Taskloader_connection _task_loader;
 	Parser_connection _parser;
-	Timer::Connection timer;
-	Sched_controller::Connection _controller;
-	static Child_starter_thread _starter_thread;
+	Timer::Connection timer {_env};
+	Sched_controller::Connection _controller {};
+	Child_starter_thread _starter_thread {_env};
 
 public:
-	Dom0_server();
+	Dom0_server(Genode::Env &env);
 
 	~Dom0_server();
 

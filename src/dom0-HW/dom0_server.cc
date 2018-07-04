@@ -3,35 +3,36 @@
 #include <cstring>
 #include <vector>
 #include <string>
-
+#include <base/attached_rom_dataspace.h>
 #include <base/printf.h>
 #include <lwip/genode.h>
-#include <os/attached_ram_dataspace.h>
+#include <base/attached_ram_dataspace.h>
 #include <nic/packet_allocator.h>
 
 #include <dom0-HW/communication_magic_numbers.h>
 #include <timer_session/connection.h>
-#include <os/config.h>
+//#include <os/config.h>
 
 /* Fiasco includes */
 namespace Fiasco {
-#include <l4/sys/kdebug.h>
+//#include <l4/sys/kdebug.h>
 }
 
 namespace Dom0_server {
 
-Dom0_server::Dom0_server() :
+Dom0_server::Dom0_server(Genode::Env &env) :
+	_env(env),
 	_listen_socket(0),
-	_in_addr{0},
-	_target_addr{0},
+	_in_addr{},
+	_target_addr{},
 	_task_loader{},
 	_parser{}
 {
 	lwip_tcpip_init();
 
 	enum { BUF_SIZE = Nic::Packet_allocator::DEFAULT_PACKET_SIZE * 128 };
-
-	Genode::Xml_node network = Genode::config()->xml_node().sub_node("network");
+	Genode::Attached_rom_dataspace config(_env, "config");
+	Genode::Xml_node network = config.xml().sub_node("network");
 
 	_in_addr.sin_family = AF_INET;
 
@@ -47,7 +48,7 @@ Dom0_server::Dom0_server() :
 	if (network.attribute_value<bool>("dhcp", true))
 	{
 		
-		PDBG("DHCP network...");
+		Genode::log("DHCP network...");
 		if (lwip_nic_init(0,
 		                  0,
 		                  0,
@@ -59,7 +60,7 @@ Dom0_server::Dom0_server() :
 	}
 	else
 	{
-		PDBG("manual network...");
+		Genode::log("manual network...");
 		char ip_addr[16] = {0};
 		char subnet[16] = {0};
 		char gateway[16] = {0};
@@ -180,48 +181,48 @@ void Dom0_server::serve()
 		{
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_send_descs(_target_socket);
-			PDBG("Done SEND_DESCS. Took: %d",timer.elapsed_ms()-time_before);
+			Genode::log("Done SEND_DESCS. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == CLEAR)
 		{
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_clear(_target_socket);
-			PDBG("Done START. Took: %d",timer.elapsed_ms()-time_before);
+			Genode::log("Done START. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == SEND_BINARIES)
 		{
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_send_binaries(_target_socket);
-			PDBG("Done SEND_BINARIES. Took: %d",timer.elapsed_ms()-time_before);
+			Genode::log("Done SEND_BINARIES. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == GET_LIVE)
 		{
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_send_live(_target_socket);
-			PDBG("Done GET_LIVE. Took: %d",timer.elapsed_ms()-time_before);
+			Genode::log("Done GET_LIVE. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == START)
 		{
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_start(_target_socket);
-			PDBG("Done START. Took: %d",timer.elapsed_ms()-time_before);
+			Genode::log("Done START. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == STOP)
 		{
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_stop(_target_socket);
-			PDBG("Done STOP. Took: %d",timer.elapsed_ms()-time_before);
+			Genode::log("Done STOP. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == GET_PROFILE)
 		{
 			int time_before=timer.elapsed_ms();
 			_starter_thread.do_send_profile(_target_socket);
-			PDBG("Done GET_PROFILE. Took: %d",timer.elapsed_ms()-time_before);
+			Genode::log("Done GET_PROFILE. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if(message == REBOOT)
 		{
 			using namespace Fiasco;
-                	enter_kdebug("*#^");
+                		//enter_kdebug("*#^");
 		}
 		else
 		{
@@ -238,49 +239,51 @@ void Dom0_server::disconnect()
 	PERR("Server socket closed.");
 }
 
-Dom0_server::Child_starter_thread::Child_starter_thread() :
-	Thread_deprecated{"child_starter"}
+Dom0_server::Child_starter_thread::Child_starter_thread(Genode::Env &env) :
+	Thread_deprecated{"child_starter"},
+	_env(env)
 {
 	start();
 }
 
-void Dom0_server::Child_starter_thread::do_start(int target_socket)
+void Dom0_server::Child_starter_thread::do_start(int )
 {
-	PDBG("Starting tasks.");
+	Genode::log("Starting tasks.");
 	_task_loader.start();
 }
 
-void Dom0_server::Child_starter_thread::do_stop(int target_socket)
+void Dom0_server::Child_starter_thread::do_stop(int )
 {
-	PDBG("Stopping tasks.");
+	Genode::log("Stopping tasks.");
 	_task_loader.stop();
 }
 
-void Dom0_server::Child_starter_thread::do_clear(int target_socket)
+void Dom0_server::Child_starter_thread::do_clear(int )
 {
-	PDBG("Clearing tasks.");
+	Genode::log("Clearing tasks.");
 	_task_loader.clear_tasks();
 }
 
 void Dom0_server::Child_starter_thread::do_send_descs(int target_socket)
 {
-	PDBG("Ready to receive task description.");
+	Genode::log("Ready to receive task description.");
 
 	// Get XML size.
 	int xml_size;
 	receiveInt32_t(xml_size, target_socket);
-	Genode::Attached_ram_dataspace xml_ds(Genode::env()->ram_session(), xml_size);
+	//Genode::Attached_ram_dataspace xml_ds(*Genode::env_deprecated()->ram_session(), *Genode::env_deprecated()->rm_session(), xml_size);
+	Genode::Attached_ram_dataspace xml_ds(_env.ram(), _env.rm(), xml_size);
 	PINF("Ready to receive XML of size %d.", xml_size);
 
 	// Get XML file.
 	receive_data(xml_ds.local_addr<char>(), xml_size,target_socket);
-	PDBG("Received XML. Initializing tasks.");
+	Genode::log("Received XML. Initializing tasks.");
 	_task_loader.add_tasks(xml_ds.cap());
 }
 
 void Dom0_server::Child_starter_thread::do_send_binaries(int target_socket)
 {
-	PDBG("Ready to receive binaries.");
+	Genode::log("Ready to receive binaries.");
 
 	// Get number of binaries to receive.
 	int num_binaries = 0;
@@ -293,14 +296,15 @@ void Dom0_server::Child_starter_thread::do_send_binaries(int target_socket)
 		// Client is waiting for ready signal.
 		sendInt32_t(GO_SEND, target_socket);
 		// Get binary name.
-		Genode::Attached_ram_dataspace name_ds(Genode::env()->ram_session(), 16);
+		Genode::Attached_ram_dataspace name_ds(_env.ram(), _env.rm(), 16);
 		receive_data(name_ds.local_addr<char>(), 16, target_socket);
 		// Get binary size.
 		int32_t binary_size = 0;
 		receiveInt32_t(binary_size, target_socket);
 		// Get binary data.
 		Genode::Dataspace_capability binDsCap = _task_loader.binary_ds(name_ds.cap(), binary_size);
-		Genode::Region_map* rm = Genode::env()->rm_session();
+		//Genode::Region_map* rm = Genode::env_deprecated()->rm_session();
+		Genode::Region_map* rm = &(_env.rm());
 		char* bin = (char*)rm->attach(binDsCap);
 		receive_data(bin, binary_size, target_socket);
 		PINF("Got binary '%s' of size %d.", name_ds.local_addr<char>(), binary_size);
@@ -311,10 +315,11 @@ void Dom0_server::Child_starter_thread::do_send_binaries(int target_socket)
 void Dom0_server::Child_starter_thread::do_send_profile(int target_socket)
 {
 	Genode::Dataspace_capability xmlDsCap = _task_loader.profile_data();
-	Genode::Region_map* rm = Genode::env()->rm_session();
+	//Genode::Region_map* rm = Genode::env_deprecated()->rm_session();
+	Genode::Region_map* rm = &(_env.rm());
 	char* xml = (char*)rm->attach(xmlDsCap);
 	size_t size = std::strlen(xml) + 1;
-	PINF("Sending profile data of size %d", size);
+	Genode::log("Sending profile data of size ", size);
 	sendInt32_t(size, target_socket);
 	send_data(xml, size, target_socket);
 	rm->detach(xml);
@@ -323,10 +328,10 @@ void Dom0_server::Child_starter_thread::do_send_profile(int target_socket)
 void Dom0_server::Child_starter_thread::do_send_live(int target_socket)
 {
 	Genode::Dataspace_capability xmlDsCap = _parser.live_data();
-	Genode::Region_map* rm = Genode::env()->rm_session();
+	Genode::Region_map* rm = &(_env.rm());
 	char* xml = (char*)rm->attach(xmlDsCap);
 	size_t size = std::strlen(xml) + 1;
-	PINF("Sending live data of size %d", size);
+	Genode::log("Sending live data of size ", size);
 	sendInt32_t(size, target_socket);
 	send_data(xml, size, target_socket);
 	rm->detach(xml);
@@ -338,7 +343,8 @@ void Dom0_server::Child_starter_thread::entry()
 	{
 	}
 }
-
+//Taskloader_connection _task_loader;
+//static Parser_connection _parser;
 
 
 void Dom0_server::send_profile(Genode::String<32> task_name)
@@ -347,5 +353,5 @@ void Dom0_server::send_profile(Genode::String<32> task_name)
 	_starter_thread.do_send_profile(_target_socket);	
 }
 
-Dom0_server::Child_starter_thread Dom0_server::_starter_thread;
+//Dom0_server::Child_starter_thread Dom0_server::_starter_thread {_env};
 }
