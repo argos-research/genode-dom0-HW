@@ -5,7 +5,9 @@
 #include <string>
 
 #include <base/printf.h>
+
 #include <lwip/genode.h>
+
 #include <base/attached_ram_dataspace.h>
 #include <base/attached_rom_dataspace.h>
 #include <nic/packet_allocator.h>
@@ -22,10 +24,13 @@ namespace Fiasco {
 namespace Dom0_server {
 
 Dom0_server::Dom0_server(Genode::Env &_env) :
-	env(_env),
-	timer(env)
+	env(_env)
 {
+	Genode::log("dom0: Constructor!");
+
 	lwip_tcpip_init();
+
+	Genode::log("dom0: lwip!");
 
 	enum { BUF_SIZE = Nic::Packet_allocator::DEFAULT_PACKET_SIZE * 128 };
 
@@ -189,13 +194,13 @@ void Dom0_server::serve(Genode::Env& env)
 			// Get XML file.
 			receive_data(xml_ds.local_addr<char>(), xml_size,target_socket);
 			Genode::log("Received XML. Initializing tasks.");
-			_task_loader.add_tasks(xml_ds.cap());
+			//_task_loader.add_tasks(xml_ds.cap());
 		}
 		else if (message == CLEAR)
 		{
-			int time_before=timer.elapsed_ms();
-			_task_loader.clear_tasks();
-			Genode::log("Done CLEAR. Took: %d",timer.elapsed_ms()-time_before);
+			//int time_before=timer.elapsed_ms();
+			//_task_loader.clear_tasks();
+			//Genode::log("Done CLEAR. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == SEND_BINARIES)
 		{
@@ -218,7 +223,7 @@ void Dom0_server::serve(Genode::Env& env)
 				int32_t binary_size = 0;
 				receiveInt32_t(binary_size, target_socket);
 				// Get binary data.
-				Genode::Dataspace_capability binDsCap = _task_loader.binary_ds(name_ds.cap(), binary_size);
+				Genode::Dataspace_capability binDsCap;// = _task_loader.binary_ds(name_ds.cap(), binary_size);
 				Genode::Region_map* rm = &env.rm();
 				char* bin = (char*)rm->attach(binDsCap);
 				receive_data(bin, binary_size, target_socket);
@@ -228,7 +233,7 @@ void Dom0_server::serve(Genode::Env& env)
 		}
 		else if (message == GET_LIVE)
 		{
-			Genode::Dataspace_capability xmlDsCap = _parser.live_data();
+			Genode::Dataspace_capability xmlDsCap;// = _parser.live_data();
 			Genode::Region_map* rm = &env.rm();
 			char* xml = (char*)rm->attach(xmlDsCap);
 			if(std::strlen(xml)>0)
@@ -242,19 +247,19 @@ void Dom0_server::serve(Genode::Env& env)
 		}
 		else if (message == START)
 		{
-			int time_before=timer.elapsed_ms();
-			_task_loader.start();
-			Genode::log("Done START. Took: %d",timer.elapsed_ms()-time_before);
+			//int time_before=timer.elapsed_ms();
+			//_task_loader.start();
+			//Genode::log("Done START. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == STOP)
 		{
-			int time_before=timer.elapsed_ms();
-			_task_loader.stop();
-			Genode::log("Done STOP. Took: %d",timer.elapsed_ms()-time_before);
+			//int time_before=timer.elapsed_ms();
+			//_task_loader.stop();
+			//Genode::log("Done STOP. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == GET_PROFILE)
 		{
-			Genode::Dataspace_capability xmlDsCap = _task_loader.profile_data();
+			Genode::Dataspace_capability xmlDsCap;// = _task_loader.profile_data();
 			Genode::Region_map* rm = &env.rm();
 			char* xml = (char*)rm->attach(xmlDsCap);
 			if(std::strlen(xml)>0)
@@ -287,9 +292,9 @@ void Dom0_server::disconnect()
 }
 
 
-void Dom0_server::send_profile(Genode::String<32> task_name)
+void Dom0_server::send_profile(Genode::String<32>/* task_name*/)
 {
-	_controller.optimize(task_name);
+	//_controller.optimize(task_name);
 	//_starter_thread.do_send_profile(_target_socket);	
 }
 
