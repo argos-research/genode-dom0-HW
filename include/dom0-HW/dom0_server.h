@@ -6,7 +6,9 @@
 #include <taskloader/taskloader_connection.h>
 #include <parser/parser_connection.h>
 #include <timer_session/connection.h>
-#include "sched_controller_session/connection.h"
+//#include "sched_controller_session/connection.h"
+
+
 
 /*extern "C" {
 #include <lwip/stats.h>
@@ -16,12 +18,13 @@
 
 extern "C" {
 #include <lwip/sockets.h>
+#include <lwip/api.h>
 }
 
 #define NETCHECK_LOOP(x)\
 	if(x<1)\
 	{ \
-		PINF("Connection terminated. Waiting for new connection.\n");\
+		Genode::log("Connection terminated. Waiting for new connection.");\
 		break;\
 	}
 
@@ -41,15 +44,15 @@ private:
 	int _listen_socket {};
 	struct sockaddr_in _in_addr {};
 	sockaddr _target_addr {};
-	Taskloader_connection _task_loader {};
-	Parser_connection _parser {};
-	Timer::Connection timer;
-	Sched_controller::Connection _controller {};
+	Taskloader::Connection _task_loader {env};
+	Parser::Connection _parser {env};
+	Timer::Connection timer{env};
+	//Sched_controller::Connection _controller {};
 
 	ssize_t receive_data(void* data, size_t size, int _target_socket);
-	ssize_t receiveInt32_t(int32_t& data, int _target_socket);
+	ssize_t receiveInt32_t(Genode::int32_t& data, int _target_socket);
 	ssize_t send_data(void* data, size_t size, int _target_socket);
-	ssize_t sendInt32_t(int32_t data, int _target_socket);
+	ssize_t sendInt32_t(Genode::int32_t data, int _target_socket);
 
 public:
 	Dom0_server(Genode::Env&);

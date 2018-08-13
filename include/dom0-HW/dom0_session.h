@@ -2,7 +2,7 @@
 
 #include <session/session.h>
 #include <base/rpc.h>
-#include <string>
+#include <util/string.h>
 
 namespace Dom0_server {
 
