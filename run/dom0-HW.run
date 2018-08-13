@@ -12,10 +12,9 @@ if {[expr !$use_usb_driver && !$use_nic_driver]} {
 	puts "\n Run script is not supported on this platform. \n"; exit 0 }
 
 set build_components {
-	core init 
+	core init dom0-HW parser taskloader mon_manager utilization cond_42
 	drivers/timer
 	drivers/nic
-	dom0-HW parser mon_manager utilization sched_controller sync
 }
 
 lappend_if $use_usb_driver              build_components drivers/usb
@@ -33,7 +32,7 @@ create_boot_directory
 #
 
 set config {
-<config verbose="yes" prio_levels="128">
+<config verbose="no" prio_levels="128">
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="RAM"/>
@@ -64,11 +63,19 @@ set config {
         	<resource name="RAM" quantum="10M"/>
         	<provides><service name="utilization"/></provides>
         </start>
-	<start name="dom0-HW" caps="100">
+	<start name="dom0-HW" caps="200">
 		<resource name="RAM" quantum="40M"/>
 		<provides><service name="dom0"/></provides>
 		<config>
 			<network dhcp="yes" ip-address="10.200.40.10" subnet-mask="255.255.255.0" default-gateway="10.200.40.1" port="3001"/>
+		</config>
+	</start>
+	<start name="taskloader" caps="1000">
+		<resource name="RAM" quantum="200M"/>
+		<provides><service name="taskloader"/></provides>
+		<config>
+			<trace quota="10M" buf-size="1M"/>
+			<profile ds-size="10M"/>
 		</config>
 	</start>
 	<start name="parser" caps="100">
@@ -78,14 +85,6 @@ set config {
 			<trace quota="20M" buf-size="10M"/>
 			<profile ds-size="20M"/>
 		</config>
-	</start>
-	<start name="sched_controller" caps="100">
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="Sched_controller"/> </provides>
-	</start>
-	<start name="sync" caps="100">
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="sync"/> </provides>
 	</start>}
 
 append_if [have_spec gpio] config {
@@ -109,8 +108,8 @@ append_if $use_usb_driver config {
 append_platform_drv_config
 
 append_if $use_nic_driver config {
-	<start name="nic_drv" caps="120">
-		<resource name="RAM" quantum="4M"/>
+	<start name="nic_drv" caps="100">
+		<resource name="RAM" quantum="20M"/>
 		<provides><service name="Nic"/></provides>
 	</start>}
 
@@ -129,14 +128,13 @@ append_if [expr [have_spec zybo]] qemu_args "-net nic,model=cadence_gem -serial 
 append_if [expr ![have_spec zybo]] qemu_args "-net nic,model=lan9118 "
 
 set boot_modules {
-	core init
+	core init dom0-HW taskloader parser mon_manager utilization
+	timer
 	ld.lib.so
 	libc.lib.so
 	stdcxx.lib.so
 	lwip.lib.so
 	libm.lib.so
-	timer
-	dom0-HW parser mon_manager utilization sched_controller sync
 }
 
 # platform-specific modules
@@ -151,3 +149,4 @@ build_boot_image $boot_modules
 append qemu_args " -nographic -smp 4"
 
 if {$skip_run == 0} {run_genode_until forever}
+

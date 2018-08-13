@@ -85,7 +85,6 @@ Genode::size_t Component::stack_size() { return 32*1024; }
 
 void Libc::Component::construct(Libc::Env &env)
 {
-	Genode::log("dom0: libc construct");
 	Libc::with_libc([&] () { static Dom0_server::Main main(env); });
 }
 

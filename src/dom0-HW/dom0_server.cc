@@ -26,11 +26,7 @@ namespace Dom0_server {
 Dom0_server::Dom0_server(Genode::Env &_env) :
 	env(_env)
 {
-	Genode::log("dom0: Constructor!");
-
 	lwip_tcpip_init();
-
-	Genode::log("dom0: lwip!");
 
 	enum { BUF_SIZE = Nic::Packet_allocator::DEFAULT_PACKET_SIZE * 128 };
 
@@ -98,7 +94,7 @@ Dom0_server::Dom0_server(Genode::Env &_env) :
 		PERR("Listen failed!");
 		return;
 	}
-	Genode::log("Listening...\n");
+	Genode::log("Listening...");
 }
 
 Dom0_server::~Dom0_server()
@@ -115,7 +111,6 @@ int Dom0_server::connect(Genode::Env&)
 		PWRN("Invalid socket from accept!");
 		return target_socket;
 	}
-	//sockaddr_in* target_in_addr = (sockaddr_in*)&_target_addr;
 	Genode::log("Got connection");
 	return target_socket;
 }
@@ -189,18 +184,18 @@ void Dom0_server::serve(Genode::Env& env)
 			int xml_size;
 			receiveInt32_t(xml_size, target_socket);
 			Genode::Attached_ram_dataspace xml_ds(env.ram(), env.rm(), xml_size);
-			Genode::log("Ready to receive XML of size %d.", xml_size);
+			Genode::log("Ready to receive XML of size ", xml_size);
 
 			// Get XML file.
 			receive_data(xml_ds.local_addr<char>(), xml_size,target_socket);
 			Genode::log("Received XML. Initializing tasks.");
-			//_task_loader.add_tasks(xml_ds.cap());
+			_task_loader.add_tasks(xml_ds.cap());
 		}
 		else if (message == CLEAR)
 		{
-			//int time_before=timer.elapsed_ms();
-			//_task_loader.clear_tasks();
-			//Genode::log("Done CLEAR. Took: %d",timer.elapsed_ms()-time_before);
+			int time_before=timer.elapsed_ms();
+			_task_loader.clear_tasks();
+			Genode::log("Done CLEAR. Took: %d",timer.elapsed_ms()-time_before);
 		}
 		else if (message == SEND_BINARIES)
 		{
@@ -209,7 +204,7 @@ void Dom0_server::serve(Genode::Env& env)
 			// Get number of binaries to receive.
 			int num_binaries = 0;
 			receiveInt32_t(num_binaries, target_socket);
-			Genode::log("%d binar%s to be sent.", num_binaries, num_binaries == 1 ? "y" : "ies");
+			Genode::log(num_binaries," binaries to be sent.");
 
 			// Receive binaries.
 			for (int i = 0; i < num_binaries; i++)
@@ -223,7 +218,7 @@ void Dom0_server::serve(Genode::Env& env)
 				int32_t binary_size = 0;
 				receiveInt32_t(binary_size, target_socket);
 				// Get binary data.
-				Genode::Dataspace_capability binDsCap;// = _task_loader.binary_ds(name_ds.cap(), binary_size);
+				Genode::Dataspace_capability binDsCap = _task_loader.binary_ds(name_ds.cap(), binary_size);
 				Genode::Region_map* rm = &env.rm();
 				char* bin = (char*)rm->attach(binDsCap);
 				receive_data(bin, binary_size, target_socket);
@@ -233,13 +228,13 @@ void Dom0_server::serve(Genode::Env& env)
 		}
 		else if (message == GET_LIVE)
 		{
-			Genode::Dataspace_capability xmlDsCap;// = _parser.live_data();
+			Genode::Dataspace_capability xmlDsCap = _parser.live_data();
 			Genode::Region_map* rm = &env.rm();
 			char* xml = (char*)rm->attach(xmlDsCap);
 			if(std::strlen(xml)>0)
 			{
 				size_t size = std::strlen(xml) + 1;
-				Genode::log("Sending live data of size %d", size);
+				Genode::log("Sending live data of size ", size);
 				sendInt32_t(size, target_socket);
 				send_data(xml, size, target_socket);
 				rm->detach(xml);
@@ -247,25 +242,25 @@ void Dom0_server::serve(Genode::Env& env)
 		}
 		else if (message == START)
 		{
-			//int time_before=timer.elapsed_ms();
-			//_task_loader.start();
-			//Genode::log("Done START. Took: %d",timer.elapsed_ms()-time_before);
+			int time_before=timer.elapsed_ms();
+			_task_loader.start();
+			Genode::log("Done START. Took: ",timer.elapsed_ms()-time_before);
 		}
 		else if (message == STOP)
 		{
-			//int time_before=timer.elapsed_ms();
-			//_task_loader.stop();
-			//Genode::log("Done STOP. Took: %d",timer.elapsed_ms()-time_before);
+			int time_before=timer.elapsed_ms();
+			_task_loader.stop();
+			Genode::log("Done STOP. Took: ",timer.elapsed_ms()-time_before);
 		}
 		else if (message == GET_PROFILE)
 		{
-			Genode::Dataspace_capability xmlDsCap;// = _task_loader.profile_data();
+			Genode::Dataspace_capability xmlDsCap = _task_loader.profile_data();
 			Genode::Region_map* rm = &env.rm();
 			char* xml = (char*)rm->attach(xmlDsCap);
 			if(std::strlen(xml)>0)
 			{
 				size_t size = std::strlen(xml) + 1;
-				Genode::log("Sending profile data of size %d", size);
+				Genode::log("Sending profile data of size ", size);
 				sendInt32_t(size, target_socket);
 				send_data(xml, size, target_socket);
 				rm->detach(xml);
@@ -295,7 +290,17 @@ void Dom0_server::disconnect()
 void Dom0_server::send_profile(Genode::String<32>/* task_name*/)
 {
 	//_controller.optimize(task_name);
-	//_starter_thread.do_send_profile(_target_socket);	
+	Genode::Dataspace_capability xmlDsCap = _task_loader.profile_data();
+			Genode::Region_map* rm = &env.rm();
+			char* xml = (char*)rm->attach(xmlDsCap);
+			if(std::strlen(xml)>0)
+			{
+				size_t size = std::strlen(xml) + 1;
+				Genode::log("Sending profile data of size ", size);
+				sendInt32_t(size, target_socket);
+				send_data(xml, size, target_socket);
+				rm->detach(xml);
+			}	
 }
 
 }

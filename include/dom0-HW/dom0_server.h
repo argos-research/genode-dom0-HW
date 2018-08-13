@@ -3,8 +3,8 @@
 #include <base/heap.h>
 
 //#include "tcp_socket.h"
-//#include <taskloader/taskloader_connection.h>
-//#include <parser/parser_connection.h>
+#include <taskloader/taskloader_connection.h>
+#include <parser/parser_connection.h>
 #include <timer_session/connection.h>
 //#include "sched_controller_session/connection.h"
 
@@ -24,7 +24,7 @@ extern "C" {
 #define NETCHECK_LOOP(x)\
 	if(x<1)\
 	{ \
-		PINF("Connection terminated. Waiting for new connection.\n");\
+		Genode::log("Connection terminated. Waiting for new connection.");\
 		break;\
 	}
 
@@ -44,9 +44,9 @@ private:
 	int _listen_socket {};
 	struct sockaddr_in _in_addr {};
 	sockaddr _target_addr {};
-	//Taskloader_connection _task_loader {};
-	//Parser_connection _parser {};
-	//Timer::Connection timer;
+	Taskloader::Connection _task_loader {env};
+	Parser::Connection _parser {env};
+	Timer::Connection timer{env};
 	//Sched_controller::Connection _controller {};
 
 	ssize_t receive_data(void* data, size_t size, int _target_socket);
