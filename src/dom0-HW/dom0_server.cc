@@ -55,7 +55,7 @@ void Dom0_server::Networker::serve(Genode::Env& _env)
 			receiveInt32_t(xml_size, target_socket);
 			Genode::Attached_ram_dataspace xml_ds(_env.ram(), _env.rm(), xml_size);
 			receive_data(xml_ds.local_addr<char>(), xml_size,target_socket);
-			_task_loader->add_tasks(xml_ds.cap(),target_socket);
+			_task_loader->add_tasks(xml_ds.cap());
 		}
 		else if (message == CLEAR)
 		{
