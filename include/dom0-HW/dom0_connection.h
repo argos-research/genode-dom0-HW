@@ -7,8 +7,13 @@ namespace Dom0_server {
 
 	struct Connection : Genode::Connection<Session>, Session_client
 	{
-		Connection() : Genode::Connection<Session>(session("dom0_server, ram_quota=4096")),
-		               Session_client(cap()) { }
+		Connection(Genode::Env &env) :
+		/* create session */
+		Genode::Connection<Dom0_server::Session>(env,
+							session(env.parent(),
+							"ram_quota=6K, cap_quota=4")),
+							Session_client(cap())
+		{ }
 	};
 
 

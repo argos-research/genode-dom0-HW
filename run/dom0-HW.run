@@ -70,8 +70,8 @@ set config {
 			<network dhcp="yes" ip-address="10.200.40.10" subnet-mask="255.255.255.0" default-gateway="10.200.40.1" port="3001"/>
 		</config>
 	</start>
-	<start name="taskloader" caps="1000">
-		<resource name="RAM" quantum="200M"/>
+	<start name="taskloader" caps="8000">
+		<resource name="RAM" quantum="600M"/>
 		<provides><service name="taskloader"/></provides>
 		<config>
 			<trace quota="10M" buf-size="1M"/>
@@ -79,11 +79,11 @@ set config {
 		</config>
 	</start>
 	<start name="parser" caps="100">
-		<resource name="RAM" quantum="200M"/>
+		<resource name="RAM" quantum="20M"/>
 		<provides> <service name="parser"/> </provides>
 		<config>
-			<trace quota="20M" buf-size="10M"/>
-			<profile ds-size="20M"/>
+			<trace quota="2M" buf-size="1M"/>
+			<profile ds-size="2M"/>
 		</config>
 	</start>}
 

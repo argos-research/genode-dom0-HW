@@ -37,38 +37,62 @@ class Dom0_server// : public Tcp_socket
 {
 private:
 	Genode::Env &env;
-
-	int target_socket {};
-	struct sockaddr_in _target_sockaddr_in {};
-
-	int _listen_socket {};
-	struct sockaddr_in _in_addr {};
-	sockaddr _target_addr {};
 	Taskloader::Connection _task_loader {env};
 	Parser::Connection _parser {env};
 	Timer::Connection timer{env};
+	
 	//Sched_controller::Connection _controller {};
 
-	ssize_t receive_data(void* data, size_t size, int _target_socket);
-	ssize_t receiveInt32_t(Genode::int32_t& data, int _target_socket);
-	ssize_t send_data(void* data, size_t size, int _target_socket);
-	ssize_t sendInt32_t(Genode::int32_t data, int _target_socket);
+	
 
 public:
+	class Networker : Genode::Thread_deprecated<2*4096>
+	{
+		public:
+			Networker(Genode::Env&, Taskloader::Connection*, Parser::Connection*, Timer::Connection*);
+
+			int connect(Genode::Env&);
+
+			void serve(Genode::Env&);
+
+			void disconnect();
+
+			void send_profile(Genode::Dataspace_capability);
+
+		private:
+
+			void entry() override;
+			Genode::Env &_env;
+			Taskloader::Connection *_task_loader;
+			Parser::Connection *_parser;
+			Timer::Connection *timer;
+
+			
+
+			int target_socket {};
+			struct sockaddr_in _target_sockaddr_in {};
+
+			int _listen_socket {};
+			struct sockaddr_in _in_addr {};
+			sockaddr _target_addr {};
+
+			ssize_t receive_data(void* data, size_t size, int _target_socket);
+			ssize_t receiveInt32_t(Genode::int32_t& data, int _target_socket);
+			ssize_t send_data(void* data, size_t size, int _target_socket);
+			ssize_t sendInt32_t(Genode::int32_t data, int _target_socket);
+			
+			Networker(const Networker&);
+			void operator=(const Networker&);
+			
+
+	};
+
 	Dom0_server(Genode::Env&);
 
 	~Dom0_server();
+	
+	Networker _networker{env,&_task_loader,&_parser,&timer};
 
-	int connect(Genode::Env&);
-
-	void serve(Genode::Env&);
-
-	void disconnect();
-
-	void start();
-
-	void send_profile(Genode::String<32> task_name);
-
-
+	void send_profile(Genode::Dataspace_capability xmlDsCap);
 };
 }

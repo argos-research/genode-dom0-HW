@@ -23,9 +23,9 @@ struct Dom0_server::Session_component : Genode::Rpc_object<Session>
 	public:
 		enum { CAP_QUOTA = 2 };
 
-		void send_profile(Genode::String<32> task_name)
+		void send_profile(Genode::Dataspace_capability xmlDsCap)
 		{
-			_dom0->send_profile(task_name);
+			_dom0->send_profile(xmlDsCap);
 		}
 
 		Session_component(Dom0_server *dom0)
@@ -72,12 +72,6 @@ struct Dom0_server::Main
 	Main(Libc::Env &env_) : _env(env_)
 	{
 		_env.parent().announce(_env.ep().manage(Dom0_root));
-		while (true)
-		{
-			// Sworn to connect and serve.
-			dom0.connect(_env);
-			dom0.serve(_env);
-		}
 	}
 };
 
