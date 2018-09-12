@@ -26,3 +26,6 @@
 
 // Reboot via kdb
 #define REBOOT 0x159D3
+
+// Active?
+#define AVAILABLE 0xAAAAA
