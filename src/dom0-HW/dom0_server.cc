@@ -16,10 +16,9 @@
 #include <timer_session/connection.h>
 //#include <os/config.h>
 
-/* Fiasco includes
 namespace Fiasco {
 #include <l4/sys/kdebug.h>
-}*/
+}
 
 namespace Dom0_server {
 
@@ -116,9 +115,13 @@ void Dom0_server::Networker::serve(Genode::Env& _env)
 		}
 		else if(message == REBOOT)
 		{
-			//using namespace Fiasco;
-                	//enter_kdebug("*#^");
+			using namespace Fiasco;
+                	enter_kdebug("*#^");
 		}
+		else if(message == AVAILABLE)
+		{
+			sendInt32_t(AVAILABLE, target_socket);
+		} 
 		else
 		{
 			PWRN("Unknown message: %d", message);
