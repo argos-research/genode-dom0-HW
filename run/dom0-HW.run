@@ -47,6 +47,7 @@ set config {
 		<service name="SIGNAL"/>
 		<service name="TRACE"/>
 	</parent-provides>
+	<affinity-space width="2" />
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
@@ -72,6 +73,7 @@ set config {
 	</start>
 	<start name="taskloader" caps="8000">
 		<resource name="RAM" quantum="600M"/>
+		<affinity xpos="1" width="2" />
 		<provides><service name="taskloader"/></provides>
 		<config>
 			<trace quota="10M" buf-size="1M"/>
@@ -88,20 +90,20 @@ set config {
 	</start>}
 
 append_if [have_spec gpio] config {
-	<start name="gpio_drv">
+	<start name="gpio_drv" caps="100">
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="Gpio"/></provides>
 		<config/>
 	</start>}
 
 append_if $use_usb_driver config {
-	<start name="usb_drv">
-		<resource name="RAM" quantum="12M"/>
+	<start name="usb_drv" caps="100">
+		<resource name="RAM" quantum="25M"/>
 		<provides>
 			<service name="Nic"/>
 		</provides>
 		<config uhci="yes" ehci="yes" xhci="yes">
-			<nic mac="02:00:00:00:01:01"/>
+			<nic mac="02:02:00:00:00:01"/>
 		</config>
 	</start>}
 
@@ -123,7 +125,7 @@ install_config $config
 # Boot image
 #
 
-append qemu_args "-net vde,sock=/tmp/switch1 -net nic,macaddr=02:00:00:00:01:01 "
+append qemu_args "-net vde,sock=/tmp/switch1 -net nic,macaddr=02:02:00:00:00:01 "
 append_if [expr [have_spec zybo]] qemu_args "-net nic,model=cadence_gem -serial null -serial mon:stdio "
 append_if [expr ![have_spec zybo]] qemu_args "-net nic,model=lan9118 "
 
