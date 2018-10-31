@@ -73,7 +73,6 @@ set config {
 	</start>
 	<start name="taskloader" caps="8000">
 		<resource name="RAM" quantum="600M"/>
-		<affinity xpos="1" width="2" />
 		<provides><service name="taskloader"/></provides>
 		<config>
 			<trace quota="10M" buf-size="1M"/>
