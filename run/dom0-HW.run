@@ -106,7 +106,7 @@ append_if $use_usb_driver config {
 			<service name="Nic"/>
 		</provides>
 		<config uhci="yes" ehci="yes" xhci="yes">
-			<nic mac="02:03:03:00:00:14"/>
+			<nic mac="02:02:00:00:00:01"/>
 		</config>
 	</start>}
 
