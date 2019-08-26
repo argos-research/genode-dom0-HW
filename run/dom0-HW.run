@@ -113,7 +113,7 @@ append_if $use_usb_driver config {
 append_platform_drv_config
 
 append_if $use_nic_driver config {
-	<start name="nic_drv" caps="100">
+	<start name="nic_drv" caps="120">
 		<resource name="RAM" quantum="20M"/>
 		<provides><service name="Nic"/></provides>
 	</start>}
@@ -128,7 +128,7 @@ install_config $config
 # Boot image
 #
 
-append qemu_args "-net vde,sock=/tmp/switch1 -net nic,macaddr=02:02:00:00:00:01 "
+append qemu_args "-net tap,ifname=tap0 -net nic,macaddr=02:02:00:00:00:01 "
 append_if [expr [have_spec zybo]] qemu_args "-net nic,model=cadence_gem -serial null -serial mon:stdio "
 append_if [expr ![have_spec zybo]] qemu_args "-net nic,model=lan9118 "
 
